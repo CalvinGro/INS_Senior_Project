@@ -1,0 +1,57 @@
+# CMake build directories
+build/
+cmake-build-*/
+out/
+
+# CMake-generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+compile_commands.json
+install_manifest.txt
+
+# Compiled objects and libraries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debugging and coverage files
+*.pdb
+*.ilk
+*.dSYM/
+*.gcda
+*.gcno
+*.gcov
+
+# Testing output
+Testing/
+test-results/
+
+# IDE-specific files
+.vs/
+.idea/
+*.user
+*.suo
+
+# VS Code personal settings
+.vscode/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*~
