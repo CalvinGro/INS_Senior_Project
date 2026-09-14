@@ -72,13 +72,13 @@ public:
         float cv_baro_bias;
     };
 
+
 private:
     NominalState nominal_state;
     CovarianceMatrix covariance_matrix;
 
-
-
+    
 public:
     void inputMeasurement(Measurement new_measurement);
-    NominalState getCurrentState(void);
+    void getCurrentState(NominalState& nominal_state);
 };
