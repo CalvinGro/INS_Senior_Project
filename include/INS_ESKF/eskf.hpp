@@ -19,45 +19,41 @@ Description - This file...
 
 class Eskf
 {
-
 public:
 
     // Definitions of Measurement Types
-    struct AccelUpdateSample {
+    struct AccelUpdateData {
         Eigen::Vector3f accel;
-        uint64_t timestamp;
     };
 
-    struct GyroUpdateSample {
+    struct GyroUpdateData {
         Eigen::Vector3f ang_vel;
-        uint64_t timestamp;
     };
 
-    struct MagCorrectionSample {
+    struct MagCorrectionData {
         Eigen::Vector3f ang_pos;
-        uint64_t timestamp;
     };
 
-    struct GnssCorrectionSample {
+    struct GnssCorrectionData {
         Eigen::Vector2f xy_pos;
-        uint64_t timestamp;
     };
 
-    struct BaroCorrectionSample {
+    struct BaroCorrectionData {
         float z_pos;
+    };
+
+    struct Measurement {
+        std::variant<
+            AccelUpdateData,
+            GyroUpdateData,
+            MagCorrectionData,
+            GnssCorrectionData,
+            BaroCorrectionData
+        > data;
         uint64_t timestamp;
     };
 
-    using Measurement = std::variant<
-        AccelUpdateSample,
-        GyroUpdateSample,
-        MagCorrectionSample,
-        GnssCorrectionSample,
-        BaroCorrectionSample
-    >;
 
-
-private:
     struct NominalState {
         Eigen::Vector3f position;
         Eigen::Vector3f velocity;
@@ -76,16 +72,13 @@ private:
         float cv_baro_bias;
     };
 
+private:
     NominalState nominal_state;
     CovarianceMatrix covariance_matrix;
 
 
 
 public:
-    void input_gyro_sample(GyroUpdate cur_gyro);
-    void input_accel_sample(AccelUpdate cur_accel);
-
-    void input_baro_sample(BaroCorrection cur_baro);
-    void input_gnss_sample(GnssCorrection cur_gnss);
-    void input_mag_sample(MagCorrection cur_mag);
+    void inputMeasurement(Measurement new_measurement);
+    NominalState getCurrentState(void);
 };
