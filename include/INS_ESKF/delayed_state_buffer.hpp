@@ -78,12 +78,14 @@ public:
 
     int16_t getStartState(uint64_t timestamp);
 
-    bool appendMeasurement(Eskf::Measurement new_measurement);
+    bool insertMeasurementAfter(MeasurementNode& parent_measurement, const Eskf::Measurement& new_measurement);
+
+    bool appendMeasurement(const Eskf::Measurement& new_measurement);
     
     bool appendStateAndMesasurement(
-        Eskf::Measurement& new_measurement, 
-        Eskf::NominalState& new_nominal_state, 
-        Eskf::CovarianceMatrix& new_covariance
+        const Eskf::Measurement& new_measurement, 
+        const Eskf::NominalState& new_nominal_state, 
+        const Eskf::CovarianceMatrix& new_covariance
     );
     
     bool removeLastState(void);

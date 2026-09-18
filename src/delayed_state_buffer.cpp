@@ -103,7 +103,7 @@ int16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
     int16_t i = 0;
     int16_t j = recorded_states - 1;
     if (j == -1) return -1;
-    
+
     while((i + 1) < j) {
         int16_t mid = i + (j - i) / 2;
         uint64_t mid_time = getStateTime(to_cb_index(mid));
@@ -128,8 +128,35 @@ int16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
 };
 
 
-bool DelayedStateBuffer::appendMeasurement(Eskf::Measurement new_measurement) {
-    MeasurementNode new_node = {new_measurement, -1, -1};
+bool DelayedStateBuffer::insertMeasurementAfter(MeasurementNode& parent_measurement, const Eskf::Measurement& new_measurement) {
+  
+    // if measurement linked-list has space.
+    int16_t new_index = acquireMeasurementIndex();
+    if (new_index == -1) {
+        bool rm_state_status = removeLastState();
+        if (!rm_state_status) return false;
+
+        new_index = acquireMeasurementIndex();
+        if (new_index == -1) return false;
+    }
+
+    // add new measurement to the measurement linked list, with its child being 
+    // the previous child of its new parent
+    MeasurementList[new_index] = {new_measurement, parent_measurement.next_measurement_index, -1};
+
+    // link the parent to this new node, over-writing its prev child.
+    parent_measurement.next_measurement_index = new_index;
+
+    // if the parent was the tail, the inserted node is the new tail.
+    if (MeasurementList[new_index].next_measurement_index == -1) {
+        tail_measurement = new_index;
+    }
+
+    return true;
+}
+
+
+bool DelayedStateBuffer::appendMeasurement(const Eskf::Measurement& new_measurement) {
 
     // if measurement linked-list has space.
     int16_t new_index = acquireMeasurementIndex();
@@ -141,7 +168,8 @@ bool DelayedStateBuffer::appendMeasurement(Eskf::Measurement new_measurement) {
         if (new_index == -1) return false;
     }
 
-    MeasurementList[new_index] = new_node;
+    // add measurement node to the front
+    MeasurementList[new_index] = {new_measurement, -1, -1};
     
     // link to prev tail (unless it is the first measurement added)
     if (tail_measurement != -1) {
@@ -155,9 +183,9 @@ bool DelayedStateBuffer::appendMeasurement(Eskf::Measurement new_measurement) {
 
 
 bool DelayedStateBuffer::appendStateAndMesasurement(
-    Eskf::Measurement& new_measurement, 
-    Eskf::NominalState& new_nominal_state, 
-    Eskf::CovarianceMatrix& new_covariance
+    const Eskf::Measurement& new_measurement, 
+    const Eskf::NominalState& new_nominal_state, 
+    const Eskf::CovarianceMatrix& new_covariance
 ) {
 
     bool meaStatus = appendMeasurement(new_measurement);
