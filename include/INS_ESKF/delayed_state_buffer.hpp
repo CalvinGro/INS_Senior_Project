@@ -76,7 +76,7 @@ public:
 
     MeasurementStatus checkIfDelayed(uint64_t timestamp);
 
-    uint16_t getStartState(uint64_t timestamp);
+    int16_t getStartState(uint64_t timestamp);
 
     bool appendMeasurement(Eskf::Measurement new_measurement);
     

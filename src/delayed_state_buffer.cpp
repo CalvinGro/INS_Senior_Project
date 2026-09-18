@@ -3,6 +3,7 @@ Author      - Calvin Gross
 Date         9/13/26
 Modified    - 9/14/26
 Modified    - 9/15/26
+Modified    - 9/18/26
 Title       - Delayed State Buffer Header
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header function for the Delayed State Buffer class.
@@ -91,30 +92,39 @@ DelayedStateBuffer::MeasurementStatus DelayedStateBuffer::checkIfDelayed(uint64_
 };
 
 
-uint16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
-    
+int16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
     
     // lambda function for transforming bi-search index into circular buffer index
     std::function<int16_t(int16_t)> to_cb_index = [=](int16_t i) {
-        return (i + newest_state) % StateCapacity;
+        return (i + oldest_state) % StateCapacity;
     };
 
     // binary search for starting state 
     int16_t i = 0;
     int16_t j = recorded_states - 1;
-    while(i < j) {
+    if (j == -1) return -1;
+    
+    while((i + 1) < j) {
         int16_t mid = i + (j - i) / 2;
         uint64_t mid_time = getStateTime(to_cb_index(mid));
         
-        if (timestamp <= mid_time) {
-            j = mid - 1;
+        if (timestamp < mid_time) {
+            j = mid;
+        } else if (timestamp > mid_time) {
+            i = mid;
         } else {
-            i = mid + 1;
+            return to_cb_index(mid);
         }
     };
 
     // return the state found
-    return i;
+    if (timestamp >= getStateTime(to_cb_index(j))) {
+        return to_cb_index(j);
+    } else if (timestamp >= getStateTime(to_cb_index(i))) {
+        return to_cb_index(i);
+    } else {
+        return -1;
+    }
 };
 
 
@@ -143,6 +153,7 @@ bool DelayedStateBuffer::appendMeasurement(Eskf::Measurement new_measurement) {
 };
 
 
+
 bool DelayedStateBuffer::appendStateAndMesasurement(
     Eskf::Measurement& new_measurement, 
     Eskf::NominalState& new_nominal_state, 
@@ -152,22 +163,23 @@ bool DelayedStateBuffer::appendStateAndMesasurement(
     bool meaStatus = appendMeasurement(new_measurement);
     if (!meaStatus) return false;
 
-    newest_state = (newest_state + 1) % StateCapacity;
+    int16_t next_new_state = (newest_state + 1) % StateCapacity;
 
     // if first state and measurement added
     if (oldest_state == -1) {
         oldest_state++;
-        recorded_states++;
     // else if circular buffer is full
-    } else if (oldest_state == newest_state) {
+    } else if (oldest_state == next_new_state) {
         bool rm_state_status = removeLastState();
         if (!rm_state_status) return false;
-    } else {
-        recorded_states++;
     }
+
+    // not set right away in the case of removeLastState() failing
+    newest_state = next_new_state;
 
     MeasurementList[tail_measurement].state_index = newest_state;
     StateBuffer[newest_state] = {new_covariance, new_nominal_state, tail_measurement};
+    recorded_states++;
     return true;
 };
 
