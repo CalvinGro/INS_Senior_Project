@@ -128,6 +128,11 @@ int16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
 };
 
 
+int16_t DelayedStateBuffer::getMeasurementsSinceCheckpoint(void) {
+    return measurements_since_checkpoint;
+}
+
+
 bool DelayedStateBuffer::insertMeasurementAfter(MeasurementNode& parent_measurement, const Eskf::Measurement& new_measurement) {
   
     // if measurement linked-list has space.
@@ -150,6 +155,8 @@ bool DelayedStateBuffer::insertMeasurementAfter(MeasurementNode& parent_measurem
     // if the parent was the tail, the inserted node is the new tail.
     if (MeasurementList[new_index].next_measurement_index == -1) {
         tail_measurement = new_index;
+
+        measurements_since_checkpoint++;
     }
 
     return true;
@@ -176,13 +183,15 @@ bool DelayedStateBuffer::appendMeasurement(const Eskf::Measurement& new_measurem
         MeasurementList[tail_measurement].next_measurement_index = new_index;
     }
     tail_measurement = new_index;
-    
+
+    measurements_since_checkpoint++;
+
     return true;
 };
 
 
 
-bool DelayedStateBuffer::appendStateAndMesasurement(
+bool DelayedStateBuffer::appendStateAndMeasurement(
     const Eskf::Measurement& new_measurement, 
     const Eskf::NominalState& new_nominal_state, 
     const Eskf::CovarianceMatrix& new_covariance
@@ -208,6 +217,9 @@ bool DelayedStateBuffer::appendStateAndMesasurement(
     MeasurementList[tail_measurement].state_index = newest_state;
     StateBuffer[newest_state] = {new_covariance, new_nominal_state, tail_measurement};
     recorded_states++;
+
+    measurements_since_checkpoint = 0;
+
     return true;
 };
 

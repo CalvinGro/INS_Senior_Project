@@ -3,6 +3,7 @@ Author      - Calvin Gross
 Date        - 9/13/26
 Modified    - 9/14/26
 Modified    - 9/15/26
+Modified    - 9/18/26
 Title       - Delayed State Buffer Header
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header function for the Delayed State Buffer class.
@@ -14,6 +15,7 @@ Description - This is the header function for the Delayed State Buffer class.
 
 #pragma once
 
+
 #include "eskf.hpp" 
 
 #include <stdbool.h>
@@ -23,9 +25,13 @@ Description - This is the header function for the Delayed State Buffer class.
 
 class DelayedStateBuffer
 {
+public:
+
+    static const uint16_t MeasurementThreshold = 5; 
+
 private:
     static const uint16_t MeasurementCapacity = 256;
-    static const uint16_t StateCapacity = MeasurementCapacity / 5;
+    static const uint16_t StateCapacity = MeasurementCapacity / MeasurementThreshold;
 
     // Free-list used to track indices available in the fixed-capacity measurement linked list.
     std::array<int16_t, MeasurementCapacity> MeasurementFreeList = [] {
@@ -41,6 +47,7 @@ private:
     void releaseMeasurementIndex(int16_t);
 
 public:
+
     enum class MeasurementStatus {
         out_of_bounds,
         delayed,
@@ -70,6 +77,7 @@ public:
     int16_t oldest_state = -1;
     int16_t newest_state = -1;
     int16_t recorded_states = 0;
+    int16_t measurements_since_checkpoint = 0;
 
 
     uint64_t DelayedStateBuffer::getStateTime(int16_t state_index);
@@ -78,11 +86,13 @@ public:
 
     int16_t getStartState(uint64_t timestamp);
 
+    int16_t getMeasurementsSinceCheckpoint(void);
+
     bool insertMeasurementAfter(MeasurementNode& parent_measurement, const Eskf::Measurement& new_measurement);
 
     bool appendMeasurement(const Eskf::Measurement& new_measurement);
     
-    bool appendStateAndMesasurement(
+    bool appendStateAndMeasurement(
         const Eskf::Measurement& new_measurement, 
         const Eskf::NominalState& new_nominal_state, 
         const Eskf::CovarianceMatrix& new_covariance
