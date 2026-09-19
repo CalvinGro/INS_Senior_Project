@@ -58,6 +58,7 @@ public:
         Eskf::CovarianceMatrix covar_matrix;
         Eskf::NominalState nominal_state;
         int16_t measurement_index;
+        uint64_t prev_timestamp;
     };
 
     struct MeasurementNode {
@@ -88,7 +89,7 @@ public:
 
     int16_t getMeasurementsSinceCheckpoint(void);
 
-    bool insertMeasurementAfter(MeasurementNode& parent_measurement, const Eskf::Measurement& new_measurement);
+    bool insertMeasurementAfter(const int16_t parent_measurement_i, const Eskf::Measurement& new_measurement);
 
     bool appendMeasurement(const Eskf::Measurement& new_measurement);
     

@@ -133,7 +133,7 @@ int16_t DelayedStateBuffer::getMeasurementsSinceCheckpoint(void) {
 }
 
 
-bool DelayedStateBuffer::insertMeasurementAfter(MeasurementNode& parent_measurement, const Eskf::Measurement& new_measurement) {
+bool DelayedStateBuffer::insertMeasurementAfter(const int16_t parent_measurement_i, const Eskf::Measurement& new_measurement) {
   
     // if measurement linked-list has space.
     int16_t new_index = acquireMeasurementIndex();
@@ -147,10 +147,10 @@ bool DelayedStateBuffer::insertMeasurementAfter(MeasurementNode& parent_measurem
 
     // add new measurement to the measurement linked list, with its child being 
     // the previous child of its new parent
-    MeasurementList[new_index] = {new_measurement, parent_measurement.next_measurement_index, -1};
+    MeasurementList[new_index] = {new_measurement, MeasurementList[parent_measurement_i].next_measurement_index, -1};
 
     // link the parent to this new node, over-writing its prev child.
-    parent_measurement.next_measurement_index = new_index;
+    MeasurementList[parent_measurement_i].next_measurement_index = new_index;
 
     // if the parent was the tail, the inserted node is the new tail.
     if (MeasurementList[new_index].next_measurement_index == -1) {
@@ -196,6 +196,7 @@ bool DelayedStateBuffer::appendStateAndMeasurement(
     const Eskf::NominalState& new_nominal_state, 
     const Eskf::CovarianceMatrix& new_covariance
 ) {
+    int16_t prev_tail = tail_measurement;
 
     bool meaStatus = appendMeasurement(new_measurement);
     if (!meaStatus) return false;
@@ -211,11 +212,17 @@ bool DelayedStateBuffer::appendStateAndMeasurement(
         if (!rm_state_status) return false;
     }
 
-    // not set right away in the case of removeLastState() failing
+    // not set earlier in the case of removeLastState() failing
     newest_state = next_new_state;
 
     MeasurementList[tail_measurement].state_index = newest_state;
-    StateBuffer[newest_state] = {new_covariance, new_nominal_state, tail_measurement};
+    StateBuffer[newest_state] = {
+        new_covariance, 
+        new_nominal_state, 
+        tail_measurement, 
+        MeasurementList[prev_tail].measurement.timestamp
+    };
+
     recorded_states++;
 
     measurements_since_checkpoint = 0;

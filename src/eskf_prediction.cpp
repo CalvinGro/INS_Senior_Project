@@ -13,12 +13,31 @@ Description - This file defines the methods to predict/update the state vector a
 
 #include "eskf.hpp" 
 
-
-bool Eskf::apply_accel_prediction(const AccelUpdateData& accel_sample, uint16_t dt) {
+bool Eskf::applyAccelAndGyroPrediction(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const AccelGyroUpdateData& ag_sample, 
+        uint16_t dt
+    ) {
 
 };
 
 
-bool Eskf::apply_gyro_prediction(const GyroUpdateData& gyro_sample, uint16_t dt) {
+// bool Eskf::applyAccelPrediction(
+//         NominalState& nom_state, 
+//         CovarianceMatrix& covar, 
+//         const AccelUpdateData& accel_sample, 
+//         uint16_t dt
+//     ) {
 
-};
+// };
+
+
+// bool Eskf::applyGyroPrediction(
+//         NominalState& nom_state, 
+//         CovarianceMatrix& covar, 
+//         const GyroUpdateData& gyro_sample, 
+//         uint16_t dt
+//     ) {
+
+// };

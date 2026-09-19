@@ -14,14 +14,29 @@ Description - This file defines the methods to correct the state vector and cova
 #include "eskf.hpp" 
 
 
-bool Eskf::apply_mag_correction(const MagCorrectionData& mag_sample, uint16_t dt) {
+bool Eskf::applyMagCorrection(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const MagCorrectionData& mag_sample,
+     uint16_t dt
+    ) {
 
 };
 
-bool Eskf::apply_gnss_correction(const GnssCorrectionData& gnss_sample, uint16_t dt) {
+bool Eskf::applyGnssCorrection(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const GnssCorrectionData& gnss_sample, 
+        uint16_t dt
+    ) {
 
 };
 
-bool Eskf::apply_baro_correction(const BaroCorrectionData& baro_sample, uint16_t dt) {
-    
+bool Eskf::applyBaroCorrection(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const BaroCorrectionData& baro_sample, 
+        uint16_t dt
+    ) {
+
 };

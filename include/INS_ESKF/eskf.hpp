@@ -1,10 +1,11 @@
 /*
-Author      - Calvin Grossdot produ
+Author      - Calvin Gross
 Date        - 9/8/26
 Modified    - 9/10/26
 Modified    - 9/11/26
 Modified    - 9/13/26
 Modified    - 9/18/26
+Modified    - 9/19/26
 Title       - Error State Kalman Filter Header
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file...
@@ -27,12 +28,17 @@ class Eskf
 {
 public:
 
-    // Definitions of Measurement Types
-    struct AccelUpdateData {
-        Eigen::Vector3f accel;
+    enum class MeasurementTypes {
+        accel,
+        gyro,
+        mag,
+        gnss,
+        baro
     };
 
-    struct GyroUpdateData {
+    // Definitions of Measurement Types
+    struct AccelGyroUpdateData {
+        Eigen::Vector3f accel;
         Eigen::Vector3f ang_vel;
     };
 
@@ -50,8 +56,7 @@ public:
 
     struct Measurement {
         std::variant<
-            AccelUpdateData,
-            GyroUpdateData,
+            AccelGyroUpdateData,
             MagCorrectionData,
             GnssCorrectionData,
             BaroCorrectionData
@@ -78,29 +83,50 @@ public:
     };
 
 
-
 private:
+    static const uint16_t OutBoundsLogSize = 50;
+
     NominalState cur_nominal_state;
     CovarianceMatrix cur_covariance_matrix;
 
     DelayedStateBuffer ds_buffer;
 
+    Measurement out_of_bounds_log[OutBoundsLogSize] = {};
+    uint16_t oob_log_i = 0;
 
-    // methods defined in eskf_prediction.cpp
-    bool apply_accel_prediction(const AccelUpdateData& accel_sample, uint16_t dt);
+    // method defined in eskf_prediction.cpp
 
-    bool apply_gyro_prediction(const GyroUpdateData& gyro_sample, uint16_t dt);
+    bool applyAccelAndGyroPrediction(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const AccelGyroUpdateData& ag_sample, 
+        uint16_t dt
+    );
 
-    
     // methods defined in eskf_correction.cpp
-    bool apply_mag_correction(const MagCorrectionData& mag_sample, uint16_t dt);
+    bool applyMagCorrection(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const MagCorrectionData& mag_sample, 
+        uint16_t dt
+    );
 
-    bool apply_gnss_correction(const GnssCorrectionData& gnss_sample, uint16_t dt);
+    bool applyGnssCorrection(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const GnssCorrectionData& gnss_sample, 
+        uint16_t dt
+    );
 
-    bool apply_baro_correction(const BaroCorrectionData& baro_sample, uint16_t dt);
+    bool applyBaroCorrection(
+        NominalState& nom_state, 
+        CovarianceMatrix& covar, 
+        const BaroCorrectionData& baro_sample, 
+        uint16_t dt
+    );
+
 
 public:
-
 
     // methods defined in eskf.cpp
     bool initEskf(void);
