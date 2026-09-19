@@ -31,7 +31,31 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
             return ds_buffer.appendMeasurement(new_measurement);
         }
 
+        if (new_measurement.timestamp < cur_ag_timestamp) return false;
+            uint32_t dt = new_measurement.timestamp - cur_ag_timestamp;
+
         // apply to current state and covariance.
+        bool apply_status = std::visit([this, dt](const auto& sample) -> bool {
+            using T = std::decay_t<decltype(sample)>;
+
+            // constexpr only includes the branch with the correct type after compilation
+            // for each types generated lambda function.
+            if constexpr (std::is_same_v<T, AccelGyroUpdateData>) {
+                return applyAccelAndGyroPrediction(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
+            } else if constexpr (std::is_same_v<T, MagCorrectionData>) {
+                return applyMagCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
+            } else if constexpr (std::is_same_v<T, GnssCorrectionData>) {
+                return applyGnssCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
+            } else if constexpr (std::is_same_v<T, BaroCorrectionData>) {
+                return applyBaroCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
+            }
+        }, new_measurement.data);
+        if (!apply_status) return apply_status;
+    
+        // update timestamp if it is a accel/gyro measurement.
+        if (std::holds_alternative<AccelGyroUpdateData>(new_measurement.data)) {
+            cur_ag_timestamp = new_measurement.timestamp;
+        }
 
     // Handle the new measurement having a timestamp before any saved states.
     } else if (status == DelayedStateBuffer::MeasurementStatus::out_of_bounds) {
@@ -46,7 +70,6 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
     } else if (status == DelayedStateBuffer::MeasurementStatus::delayed) {
         int16_t state_i = ds_buffer.getStartState(new_measurement.timestamp);
         int16_t measurement_i = ds_buffer.StateBuffer[state_i].measurement_index;
-
         int16_t prev_mea_i = -1;
 
         uint64_t prev_ag_timestamp = ds_buffer.StateBuffer[state_i].prev_timestamp;
@@ -56,7 +79,7 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
         bool applied_new = false;
 
         // loop through all measurements, add the new measurement, and modify the saved and current states
-        while (measurement_i != ds_buffer.tail_measurement) {
+        while (measurement_i != -1) {
 
             // apply new measurement once spot found
             if (!applied_new && new_measurement.timestamp < ds_buffer.MeasurementList[measurement_i].measurement.timestamp) {
@@ -104,17 +127,20 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
                 ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].nominal_state = tracked_state;
                 ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].covar_matrix = tracked_covar;
             }
+            
+            // set the previous accel/gyro timestamp if the current measurement is accel/gyro.
+            if (std::holds_alternative<AccelGyroUpdateData>(ds_buffer.MeasurementList[measurement_i].measurement.data)) {
+                prev_ag_timestamp = ds_buffer.MeasurementList[measurement_i].measurement.timestamp;
+            }
+
+            // progress to the next measurement
+            prev_mea_i = measurement_i;
+            measurement_i = ds_buffer.MeasurementList[measurement_i].next_measurement_index;
         }
 
-        // for the final measurement save the state and covariance
-        
-
-        // set the previous accel/gyro timestamp if the current measurement is accel/gyro.
-        if (std::holds_alternative<AccelGyroUpdateData>(ds_buffer.MeasurementList[measurement_i].measurement.data)) {
-            prev_ag_timestamp = ds_buffer.MeasurementList[measurement_i].measurement.timestamp;
-        }
-
-
+        // after the final measurement save the state and covariance
+        cur_nominal_state = tracked_state;
+        cur_covariance_matrix = tracked_covar;
     } else {
         return false;
     }

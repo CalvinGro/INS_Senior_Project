@@ -55,3 +55,6 @@ Thumbs.db
 *.tmp
 *.log
 *~
+
+# data / generated data
+generated_data_sets/

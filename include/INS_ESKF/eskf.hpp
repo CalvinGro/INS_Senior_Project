@@ -88,6 +88,7 @@ private:
 
     NominalState cur_nominal_state;
     CovarianceMatrix cur_covariance_matrix;
+    uint64_t cur_ag_timestamp;
 
     DelayedStateBuffer ds_buffer;
 
@@ -100,7 +101,7 @@ private:
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const AccelGyroUpdateData& ag_sample, 
-        uint16_t dt
+        uint32_t dt
     );
 
     // methods defined in eskf_correction.cpp
@@ -108,21 +109,21 @@ private:
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const MagCorrectionData& mag_sample, 
-        uint16_t dt
+        uint32_t dt
     );
 
     bool applyGnssCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const GnssCorrectionData& gnss_sample, 
-        uint16_t dt
+        uint32_t dt
     );
 
     bool applyBaroCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const BaroCorrectionData& baro_sample, 
-        uint16_t dt
+        uint32_t dt
     );
 
 
