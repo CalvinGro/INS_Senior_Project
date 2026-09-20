@@ -18,7 +18,7 @@ bool Eskf::applyMagCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const MagCorrectionData& mag_sample,
-     uint32_t dt
+     uint64_t dt
     ) {
 
 };
@@ -27,7 +27,7 @@ bool Eskf::applyGnssCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const GnssCorrectionData& gnss_sample, 
-        uint32_t dt
+        uint64_t dt
     ) {
 
 };
@@ -36,7 +36,7 @@ bool Eskf::applyBaroCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const BaroCorrectionData& baro_sample, 
-        uint32_t dt
+        uint64_t dt
     ) {
 
 };

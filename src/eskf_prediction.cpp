@@ -17,9 +17,9 @@ bool Eskf::applyAccelAndGyroPrediction(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const AccelGyroUpdateData& ag_sample, 
-        uint32_t dt
+        uint64_t dt
     ) {
-
+    
 };
 
 

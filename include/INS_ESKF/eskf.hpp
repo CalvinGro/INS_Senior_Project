@@ -101,7 +101,7 @@ private:
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const AccelGyroUpdateData& ag_sample, 
-        uint32_t dt
+        uint64_t dt
     );
 
     // methods defined in eskf_correction.cpp
@@ -109,21 +109,21 @@ private:
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const MagCorrectionData& mag_sample, 
-        uint32_t dt
+        uint64_t dt
     );
 
     bool applyGnssCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const GnssCorrectionData& gnss_sample, 
-        uint32_t dt
+        uint64_t dt
     );
 
     bool applyBaroCorrection(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const BaroCorrectionData& baro_sample, 
-        uint32_t dt
+        uint64_t dt
     );
 
 

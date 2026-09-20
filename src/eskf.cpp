@@ -21,18 +21,20 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
     // Standard, non-delayed measurement handling.
     if (status == DelayedStateBuffer::MeasurementStatus::on_time) {
         int16_t mea_since_checkpnt = ds_buffer.getMeasurementsSinceCheckpoint();
+        bool append_status = true; 
 
         // save state only if threshold has been reached and the previous measurement is a
         // accel/gyro measurement, so that the saved previous timestamp is relevant.
         if (mea_since_checkpnt >= DelayedStateBuffer::MeasurementThreshold &&
             std::holds_alternative<AccelGyroUpdateData>(new_measurement.data)) {
-            return ds_buffer.appendStateAndMeasurement(new_measurement, this->cur_nominal_state, this->cur_covariance_matrix);
+            append_status =  ds_buffer.appendStateAndMeasurement(new_measurement, this->cur_nominal_state, this->cur_covariance_matrix);
         } else {
-            return ds_buffer.appendMeasurement(new_measurement);
+            append_status = ds_buffer.appendMeasurement(new_measurement);
         }
+        if (!append_status) return append_status;
 
         if (new_measurement.timestamp < cur_ag_timestamp) return false;
-            uint32_t dt = new_measurement.timestamp - cur_ag_timestamp;
+            uint64_t dt = new_measurement.timestamp - cur_ag_timestamp;
 
         // apply to current state and covariance.
         bool apply_status = std::visit([this, dt](const auto& sample) -> bool {
@@ -57,6 +59,7 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
             cur_ag_timestamp = new_measurement.timestamp;
         }
 
+
     // Handle the new measurement having a timestamp before any saved states.
     } else if (status == DelayedStateBuffer::MeasurementStatus::out_of_bounds) {
         if (oob_log_i >= OutBoundsLogSize) return true;
@@ -68,13 +71,15 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
 
     // Here is the actual delayed state handling.
     } else if (status == DelayedStateBuffer::MeasurementStatus::delayed) {
-        int16_t state_i = ds_buffer.getStartState(new_measurement.timestamp);
-        int16_t measurement_i = ds_buffer.StateBuffer[state_i].measurement_index;
+        int16_t start_state_i = ds_buffer.getStartState(new_measurement.timestamp);
+        if (start_state_i == -1) return false;
+
+        int16_t measurement_i = ds_buffer.StateBuffer[start_state_i].measurement_index;
         int16_t prev_mea_i = -1;
 
-        uint64_t prev_ag_timestamp = ds_buffer.StateBuffer[state_i].prev_timestamp;
-        NominalState tracked_state = ds_buffer.StateBuffer[state_i].nominal_state;
-        CovarianceMatrix tracked_covar = ds_buffer.StateBuffer[state_i].covar_matrix;
+        uint64_t prev_ag_timestamp = ds_buffer.StateBuffer[start_state_i].prev_timestamp;
+        NominalState tracked_state = ds_buffer.StateBuffer[start_state_i].nominal_state;
+        CovarianceMatrix tracked_covar = ds_buffer.StateBuffer[start_state_i].covar_matrix;
 
         bool applied_new = false;
 
@@ -99,9 +104,18 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
                 }
             }
 
+            // first, check if there is a state attached and if so, 
+            // update it with the states before the new_measurement.
+            if (ds_buffer.MeasurementList[measurement_i].state_index != -1 && 
+                ds_buffer.MeasurementList[measurement_i].state_index != start_state_i) {
+                ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].nominal_state = tracked_state;
+                ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].covar_matrix = tracked_covar;
+                ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].prev_timestamp = prev_ag_timestamp;
+            }
+            
             // calculate the change in time (dt) since the last accel/gyro reading.
-            if (new_measurement.timestamp < prev_ag_timestamp) return false;
-            uint32_t dt = new_measurement.timestamp - prev_ag_timestamp;
+            if (ds_buffer.MeasurementList[measurement_i].measurement.timestamp < prev_ag_timestamp) return false;
+            uint64_t dt = ds_buffer.MeasurementList[measurement_i].measurement.timestamp - prev_ag_timestamp;
             
             // next, apply the current measurement to the state and covariance 
             // using the correct function based off the type of the data.
@@ -122,12 +136,6 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
             }, ds_buffer.MeasurementList[measurement_i].measurement.data);
             if (!apply_status) return apply_status;
 
-            // finally, check if there is a state attached and if so, update it.
-            if (ds_buffer.MeasurementList[measurement_i].state_index != -1) {
-                ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].nominal_state = tracked_state;
-                ds_buffer.StateBuffer[ds_buffer.MeasurementList[measurement_i].state_index].covar_matrix = tracked_covar;
-            }
-            
             // set the previous accel/gyro timestamp if the current measurement is accel/gyro.
             if (std::holds_alternative<AccelGyroUpdateData>(ds_buffer.MeasurementList[measurement_i].measurement.data)) {
                 prev_ag_timestamp = ds_buffer.MeasurementList[measurement_i].measurement.timestamp;
@@ -138,15 +146,22 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
             measurement_i = ds_buffer.MeasurementList[measurement_i].next_measurement_index;
         }
 
+        // verify new_measurement was applied
+        if (!applied_new) return false;
+
         // after the final measurement save the state and covariance
         cur_nominal_state = tracked_state;
         cur_covariance_matrix = tracked_covar;
+        cur_ag_timestamp = prev_ag_timestamp;
+
     } else {
         return false;
     }
+
+    return true;
 };
 
 bool Eskf::getCurrentState(NominalState& nominal_state) {
-    cur_nominal_state = nominal_state;
+    nominal_state = cur_nominal_state;
     return true;
 };
