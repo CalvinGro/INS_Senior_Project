@@ -6,7 +6,7 @@ Modified    - 9/15/26
 Modified    - 9/18/26
 Title       - Delayed State Buffer Header
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
-Description - This is the header function for the Delayed State Buffer class.
+Description - This is the header file for the Delayed State Buffer class.
             This class is responsible for saving the state, covariance, and
             measurement after every measurement is processed. This allows for
             processing late correction data using a rewind and replay technique.
@@ -15,13 +15,14 @@ Description - This is the header function for the Delayed State Buffer class.
 
 #pragma once
 
-
-#include "eskf.hpp" 
+#include "ins_types.h"
+#include "eskf.h" 
 
 #include <stdbool.h>
 #include <variant>
 #include <stdint.h>
 
+namespace ins {
 
 class DelayedStateBuffer
 {
@@ -48,21 +49,15 @@ private:
 
 public:
 
-    enum class MeasurementStatus {
-        out_of_bounds,
-        delayed,
-        on_time
-    };
-    
     struct StateCheckpoint {
-        Eskf::CovarianceMatrix covar_matrix;
-        Eskf::NominalState nominal_state;
+        CovarianceMatrix covar_matrix;
+        NominalState nominal_state;
         int16_t measurement_index;
         uint64_t prev_timestamp;
     };
 
     struct MeasurementNode {
-        Eskf::Measurement measurement;
+        Measurement measurement;
         int16_t next_measurement_index;
         int16_t state_index;
     };
@@ -89,15 +84,17 @@ public:
 
     int16_t getMeasurementsSinceCheckpoint(void);
 
-    bool insertMeasurementAfter(const int16_t parent_measurement_i, const Eskf::Measurement& new_measurement);
+    bool insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement);
 
-    bool appendMeasurement(const Eskf::Measurement& new_measurement);
+    bool appendMeasurement(const Measurement& new_measurement);
     
     bool appendStateAndMeasurement(
-        const Eskf::Measurement& new_measurement, 
-        const Eskf::NominalState& new_nominal_state, 
-        const Eskf::CovarianceMatrix& new_covariance
+        const Measurement& new_measurement, 
+        const NominalState& new_nominal_state, 
+        const CovarianceMatrix& new_covariance
     );
     
     bool removeLastState(void);
 };
+
+}

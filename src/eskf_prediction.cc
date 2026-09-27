@@ -10,8 +10,10 @@ Description - This file defines the methods to predict/update the state vector a
 
 #pragma once
 
+#include "ins_types.h"
+#include "eskf.h" 
 
-#include "eskf.hpp" 
+namespace ins {
 
 bool Eskf::applyAccelAndGyroPrediction(
         NominalState& nom_state, 
@@ -22,6 +24,7 @@ bool Eskf::applyAccelAndGyroPrediction(
     
 };
 
+}
 
 // bool Eskf::applyAccelPrediction(
 //         NominalState& nom_state, 

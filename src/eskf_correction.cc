@@ -10,9 +10,10 @@ Description - This file defines the methods to correct the state vector and cova
 
 #pragma once
 
+#include "ins_types.h"
+#include "eskf.h" 
 
-#include "eskf.hpp" 
-
+namespace ins {
 
 bool Eskf::applyMagCorrection(
         NominalState& nom_state, 
@@ -40,3 +41,5 @@ bool Eskf::applyBaroCorrection(
     ) {
 
 };
+
+}

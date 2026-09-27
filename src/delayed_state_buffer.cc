@@ -12,9 +12,10 @@ Description - This is the header function for the Delayed State Buffer class.
             processing late correction data using a rewind and replay technique.
 */
 
+#include "ins_types.h"
+#include "delayed_state_buffer.h"
 
-#include "delayed_state_buffer.hpp"
-
+namespace ins {
 
 // Free-List Methods
 
@@ -74,7 +75,7 @@ bool  DelayedStateBuffer::removeLastState(void) {
 };
 
 
-DelayedStateBuffer::MeasurementStatus DelayedStateBuffer::checkIfDelayed(uint64_t timestamp) {
+MeasurementStatus DelayedStateBuffer::checkIfDelayed(uint64_t timestamp) {
 
     // check if timestamp is on-time (the newest timestamp)
     if(tail_measurement == -1 || MeasurementList[tail_measurement].measurement.timestamp <= timestamp) {
@@ -133,7 +134,7 @@ int16_t DelayedStateBuffer::getMeasurementsSinceCheckpoint(void) {
 }
 
 
-bool DelayedStateBuffer::insertMeasurementAfter(const int16_t parent_measurement_i, const Eskf::Measurement& new_measurement) {
+bool DelayedStateBuffer::insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement) {
   
     // if measurement linked-list has space.
     int16_t new_index = acquireMeasurementIndex();
@@ -163,7 +164,7 @@ bool DelayedStateBuffer::insertMeasurementAfter(const int16_t parent_measurement
 }
 
 
-bool DelayedStateBuffer::appendMeasurement(const Eskf::Measurement& new_measurement) {
+bool DelayedStateBuffer::appendMeasurement(const Measurement& new_measurement) {
 
     // if measurement linked-list has space.
     int16_t new_index = acquireMeasurementIndex();
@@ -192,9 +193,9 @@ bool DelayedStateBuffer::appendMeasurement(const Eskf::Measurement& new_measurem
 
 
 bool DelayedStateBuffer::appendStateAndMeasurement(
-    const Eskf::Measurement& new_measurement, 
-    const Eskf::NominalState& new_nominal_state, 
-    const Eskf::CovarianceMatrix& new_covariance
+    const Measurement& new_measurement, 
+    const NominalState& new_nominal_state, 
+    const CovarianceMatrix& new_covariance
 ) {
     int16_t prev_tail = tail_measurement;
 
@@ -230,3 +231,4 @@ bool DelayedStateBuffer::appendStateAndMeasurement(
     return true;
 };
 
+}

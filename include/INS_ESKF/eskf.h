@@ -14,8 +14,8 @@ Description - This file...
 
 #pragma once
 
-
-#include "delayed_state_buffer.hpp"
+#include "ins_types.h"
+#include "delayed_state_buffer.h"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -23,66 +23,10 @@ Description - This file...
 #include <variant>
 #include <stdint.h>
 
+namespace ins {
 
 class Eskf
 {
-public:
-
-    enum class MeasurementTypes {
-        accel,
-        gyro,
-        mag,
-        gnss,
-        baro
-    };
-
-    // Definitions of Measurement Types
-    struct AccelGyroUpdateData {
-        Eigen::Vector3f accel;
-        Eigen::Vector3f ang_vel;
-    };
-
-    struct MagCorrectionData {
-        Eigen::Vector3f ang_pos;
-    };
-
-    struct GnssCorrectionData {
-        Eigen::Vector2f xy_pos;
-    };
-
-    struct BaroCorrectionData {
-        float z_pos;
-    };
-
-    struct Measurement {
-        std::variant<
-            AccelGyroUpdateData,
-            MagCorrectionData,
-            GnssCorrectionData,
-            BaroCorrectionData
-        > data;
-        uint64_t timestamp;
-    };
-
-    struct NominalState {
-        Eigen::Vector3f position;
-        Eigen::Vector3f velocity;
-        Eigen::Quaternionf angular_position;
-        Eigen::Vector3f accel_bias;
-        Eigen::Vector3f gyro_bias;
-        float baro_bias;
-    };
-
-    struct CovarianceMatrix {
-        Eigen::Vector3f cv_position;
-        Eigen::Vector3f cv_velocity;
-        Eigen::Vector3f cv_angular_position;
-        Eigen::Vector3f cv_accel_bias;
-        Eigen::Vector3f cv_gyro_bias;
-        float cv_baro_bias;
-    };
-
-
 private:
     static const uint16_t OutBoundsLogSize = 50;
 
@@ -137,3 +81,5 @@ public:
     bool getCurrentState(NominalState& nominal_state);
 
 };
+
+}
