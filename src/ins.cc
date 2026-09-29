@@ -8,18 +8,25 @@ Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file defines the public methods for interacting with the eskf.
 */
 
-#include "eskf.hpp"
+#include "delayed_state_buffer.h"
+#include "eskf.h" 
+#include "ins_types.h"
 
+#include <stdbool.h>
+#include <variant>
+#include <stdint.h>
+
+namespace ins {
 
 bool Eskf::initEskf(void) {
 
 };
 
-bool Eskf::applyMeasurement(const Measurement& new_measurement) {
-    DelayedStateBuffer::MeasurementStatus status = ds_buffer.checkIfDelayed(new_measurement.timestamp);
+bool Ins::applyMeasurement(const Measurement& new_measurement) {
+    DelayedStateBuffer::DelayStatus status = ds_buffer.checkIfDelayed(new_measurement.timestamp);
 
     // Standard, non-delayed measurement handling.
-    if (status == DelayedStateBuffer::MeasurementStatus::on_time) {
+    if (status == DelayedStateBuffer::DelayStatus::on_time) {
         int16_t mea_since_checkpnt = ds_buffer.getMeasurementsSinceCheckpoint();
         bool append_status = true; 
 
@@ -61,7 +68,7 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
 
 
     // Handle the new measurement having a timestamp before any saved states.
-    } else if (status == DelayedStateBuffer::MeasurementStatus::out_of_bounds) {
+    } else if (status == DelayedStateBuffer::DelayStatus::out_of_bounds) {
         if (oob_log_i >= OutBoundsLogSize) return true;
 
         // update out of bounds log if it is not full yet
@@ -70,7 +77,7 @@ bool Eskf::applyMeasurement(const Measurement& new_measurement) {
 
 
     // Here is the actual delayed state handling.
-    } else if (status == DelayedStateBuffer::MeasurementStatus::delayed) {
+    } else if (status == DelayedStateBuffer::DelayStatus::delayed) {
         int16_t start_state_i = ds_buffer.getStartState(new_measurement.timestamp);
         if (start_state_i == -1) return false;
 
@@ -165,3 +172,5 @@ bool Eskf::getCurrentState(NominalState& nominal_state) {
     nominal_state = cur_nominal_state;
     return true;
 };
+
+}

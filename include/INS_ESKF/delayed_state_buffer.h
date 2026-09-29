@@ -49,6 +49,12 @@ private:
 
 public:
 
+    enum class DelayStatus {
+        out_of_bounds,
+        delayed,
+        on_time
+    };
+
     struct StateCheckpoint {
         CovarianceMatrix covar_matrix;
         NominalState nominal_state;
@@ -78,7 +84,7 @@ public:
 
     uint64_t DelayedStateBuffer::getStateTime(int16_t state_index);
 
-    MeasurementStatus checkIfDelayed(uint64_t timestamp);
+    DelayStatus checkIfDelayed(uint64_t timestamp);
 
     int16_t getStartState(uint64_t timestamp);
 

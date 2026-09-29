@@ -75,21 +75,21 @@ bool  DelayedStateBuffer::removeLastState(void) {
 };
 
 
-MeasurementStatus DelayedStateBuffer::checkIfDelayed(uint64_t timestamp) {
+DelayedStateBuffer::DelayStatus DelayedStateBuffer::checkIfDelayed(uint64_t timestamp) {
 
     // check if timestamp is on-time (the newest timestamp)
     if(tail_measurement == -1 || MeasurementList[tail_measurement].measurement.timestamp <= timestamp) {
-        return MeasurementStatus::on_time;
+        return DelayStatus::on_time;
     }
 
     // check if timestamp is out-of-bounds (past the saved measurements and states)
     uint64_t oldest_timestamp = getStateTime(oldest_state);
     if (oldest_timestamp > timestamp) {
-        return MeasurementStatus::out_of_bounds;
+        return DelayStatus::out_of_bounds;
     }
 
     // otherwise the timestamp is somewhere within the saved measurements
-    return MeasurementStatus::delayed;
+    return DelayStatus::delayed;
 };
 
 
