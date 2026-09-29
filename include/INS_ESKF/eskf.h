@@ -15,7 +15,6 @@ Description - This file...
 #pragma once
 
 #include "ins_types.h"
-#include "delayed_state_buffer.h"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -27,12 +26,15 @@ namespace ins {
 
 class Eskf
 {
-private:
     static const uint16_t OutBoundsLogSize = 50;
 
     NominalState cur_nominal_state;
     CovarianceMatrix cur_covariance_matrix;
     uint64_t cur_ag_timestamp;
+
+    ConfPredictionNoises conf_prediction_noises;
+
+    inline static const Eigen::Vector3f gravity = {0, 0, 9.80655};
 
     DelayedStateBuffer ds_buffer;
 
@@ -70,16 +72,8 @@ private:
         uint64_t dt
     );
 
-
-public:
-
-    // methods defined in eskf.cpp
-    bool initEskf(void);
-
-    bool applyMeasurement(const Measurement& new_measurement);
-
-    bool getCurrentState(NominalState& nominal_state);
-
+    // utility eskf methods 
+    Eigen::Quaternionf Eskf::RotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
 };
 
 }

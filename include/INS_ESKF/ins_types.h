@@ -49,21 +49,15 @@ namespace ins {
     };
 
     struct NominalState {
-        Eigen::Vector3f position;
-        Eigen::Vector3f velocity;
-        Eigen::Quaternionf angular_position;
-        Eigen::Vector3f accel_bias;
-        Eigen::Vector3f gyro_bias;
-        float baro_bias;
+        Eigen::Vector3f position = Eigen::Vector3f::Zero();
+        Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
+        Eigen::Quaternionf angular_position = Eigen::Quaternionf::Identity();
+        Eigen::Vector3f accel_bias = Eigen::Vector3f::Zero();
+        Eigen::Vector3f gyro_bias = Eigen::Vector3f::Zero();
+        float baro_bias = 0.0f;
     };
 
     using CovarianceMatrix = Eigen::Matrix<float, 16, 16>;
-
-    enum class MeasurementStatus {
-        out_of_bounds,
-        delayed,
-        on_time
-    };
 
     enum class EsfkStatus {
         success,
@@ -71,4 +65,11 @@ namespace ins {
         invalid_measurment,
         error
     };
+
+    struct ConfPredictionNoises {
+        Eigen::Vector3f velocity_noise_v = Eigen::Vector3f::Zero();
+        Eigen::Vector3f orientation_noise_v = Eigen::Vector3f::Zero();
+        Eigen::Vector3f accel_bias_noise_v = Eigen::Vector3f::Zero();
+        Eigen::Vector3f gyro_bias_noise_v = Eigen::Vector3f::Zero();
+    }
 }
