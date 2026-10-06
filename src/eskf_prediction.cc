@@ -2,6 +2,7 @@
 Author      - Calvin Gross
 Date        - 9/18/26
 Modified    - 9/28/26
+Modified    - 10/5/26
 Title       - Error State Kalman Filter Prediction Methods
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file defines the methods to predict/update the state vector and
@@ -21,7 +22,7 @@ Description - This file defines the methods to predict/update the state vector a
 
 namespace ins {
 
-bool Eskf::applyAccelAndGyroPrediction(
+bool Eskf::AccelGyroPredict(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const AccelGyroUpdateData& ag_sample, 
@@ -66,7 +67,8 @@ bool Eskf::applyAccelAndGyroPrediction(
     fx.block<3,3>(3,6) = -1 * rotated_accel.asSkewSymmetric().toDenseMatrix() * dt_seconds;
     fx.block<3,3>(3,9) = -1 * R * dt_seconds;
     
-    // orientation 
+    // orientation
+    // variance stored in global frame
     fx.block<3,3>(6,6) = Eigen::Matrix3f::Identity();
     fx.block<3,3>(6,12) = -1 * R * dt_seconds;
 
@@ -76,10 +78,11 @@ bool Eskf::applyAccelAndGyroPrediction(
     fx(15,15) = 1;
 
     Eigen::Matrix<float, 16, 16> perturbation_covar = Eigen::Matrix<float, 16, 16>::Zero();
-    perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_prediction_noises.velocity_noise_v * dt_seconds * dt_seconds;
-    perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_prediction_noises.orientation_noise_v * dt_seconds * dt_seconds;
-    perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_prediction_noises.accel_bias_noise_v * dt_seconds;
-    perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_prediction_noises.gyro_bias_noise_v * dt_seconds;
+    perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_prediction_noises.velocity_vgr * dt_seconds;
+    perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_prediction_noises.orientation_vgr * dt_seconds;
+    perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_prediction_noises.accel_bias_vgr * dt_seconds;
+    perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_prediction_noises.gyro_bias_vgr * dt_seconds;
+    perturbation_covar(15,15) = conf_prediction_noises.baro_bias_vgr * dt_seconds;
 
     next_covar = fx * covar * fx.transpose() + perturbation_covar;
 

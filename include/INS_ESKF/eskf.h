@@ -32,9 +32,9 @@ class Eskf
     CovarianceMatrix cur_covariance_matrix;
     uint64_t cur_ag_timestamp;
 
-    ConfPredictionNoises conf_prediction_noises;
+    ConfVarGrowthRates conf_prediction_noises;
 
-    inline static const Eigen::Vector3f gravity = {0, 0, 9.80655};
+    inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
 
     DelayedStateBuffer ds_buffer;
 
@@ -43,7 +43,7 @@ class Eskf
 
     // method defined in eskf_prediction.cpp
 
-    bool applyAccelAndGyroPrediction(
+    bool AccelGyroPredict(
         NominalState& nom_state, 
         CovarianceMatrix& covar, 
         const AccelGyroUpdateData& ag_sample, 

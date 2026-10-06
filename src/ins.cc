@@ -50,7 +50,7 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
             // constexpr only includes the branch with the correct type after compilation
             // for each types generated lambda function.
             if constexpr (std::is_same_v<T, AccelGyroUpdateData>) {
-                return applyAccelAndGyroPrediction(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
+                return AccelGyroPredict(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
             } else if constexpr (std::is_same_v<T, MagCorrectionData>) {
                 return applyMagCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
             } else if constexpr (std::is_same_v<T, GnssCorrectionData>) {
@@ -132,7 +132,7 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
                 // constexpr only includes the branch with the correct type after compilation
                 // for each types generated lambda function.
                 if constexpr (std::is_same_v<T, AccelGyroUpdateData>) {
-                    return applyAccelAndGyroPrediction(tracked_state, tracked_covar, sample, dt);
+                    return AccelGyroPredict(tracked_state, tracked_covar, sample, dt);
                 } else if constexpr (std::is_same_v<T, MagCorrectionData>) {
                     return applyMagCorrection(tracked_state, tracked_covar, sample, dt);
                 } else if constexpr (std::is_same_v<T, GnssCorrectionData>) {

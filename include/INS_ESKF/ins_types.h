@@ -66,10 +66,12 @@ namespace ins {
         error
     };
 
-    struct ConfPredictionNoises {
-        Eigen::Vector3f velocity_noise_v = Eigen::Vector3f::Zero();
-        Eigen::Vector3f orientation_noise_v = Eigen::Vector3f::Zero();
-        Eigen::Vector3f accel_bias_noise_v = Eigen::Vector3f::Zero();
-        Eigen::Vector3f gyro_bias_noise_v = Eigen::Vector3f::Zero();
-    }
+    // Variance Growth Rates
+    struct ConfVarGrowthRates {
+        Eigen::Vector3f velocity_vgr = Eigen::Vector3f::Zero();
+        Eigen::Vector3f orientation_vgr = Eigen::Vector3f::Zero();
+        Eigen::Vector3f accel_bias_vgr = Eigen::Vector3f::Zero();
+        Eigen::Vector3f gyro_bias_vgr = Eigen::Vector3f::Zero();
+        float baro_bias_vgr = 0.0f;
+    };
 }
