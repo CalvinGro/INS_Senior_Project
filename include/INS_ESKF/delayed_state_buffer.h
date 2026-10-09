@@ -56,8 +56,8 @@ public:
     };
 
     struct StateCheckpoint {
-        CovarianceMatrix covar_matrix;
-        NominalState nominal_state;
+        ESCovarMtx covar_matrix;
+        NStateVec nominal_state;
         int16_t measurement_index;
         uint64_t prev_timestamp;
     };
@@ -96,8 +96,8 @@ public:
     
     bool appendStateAndMeasurement(
         const Measurement& new_measurement, 
-        const NominalState& new_nominal_state, 
-        const CovarianceMatrix& new_covariance
+        const NStateVec& new_nominal_state, 
+        const ESCovarMtx& new_covariance
     );
     
     bool removeLastState(void);

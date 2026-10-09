@@ -28,8 +28,11 @@ public:
 
     bool applyMeasurement(const Measurement& new_measurement);
 
-    bool getCurrentState(NominalState& nominal_state);
+    bool getCurrentState(NStateVec& nominal_state);
 
+    bool applyGeodeticGNSSCorrection();
+
+    bool applyECEFGNSSCorrection();
 };
 
 }

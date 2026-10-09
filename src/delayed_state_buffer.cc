@@ -194,8 +194,8 @@ bool DelayedStateBuffer::appendMeasurement(const Measurement& new_measurement) {
 
 bool DelayedStateBuffer::appendStateAndMeasurement(
     const Measurement& new_measurement, 
-    const NominalState& new_nominal_state, 
-    const CovarianceMatrix& new_covariance
+    const NStateVec& new_nominal_state, 
+    const ESCovarMtx& new_covariance
 ) {
     int16_t prev_tail = tail_measurement;
 

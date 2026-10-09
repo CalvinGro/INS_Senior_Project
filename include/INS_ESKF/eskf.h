@@ -28,52 +28,63 @@ class Eskf
 {
     static const uint16_t OutBoundsLogSize = 50;
 
-    NominalState cur_nominal_state;
-    CovarianceMatrix cur_covariance_matrix;
-    uint64_t cur_ag_timestamp;
+    // the most resent 
+    FullState cur_state;
 
     ConfVarGrowthRates conf_prediction_noises;
 
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
 
-    DelayedStateBuffer ds_buffer;
+    // DelayedStateBuffer ds_buffer;
 
     Measurement out_of_bounds_log[OutBoundsLogSize] = {};
     uint16_t oob_log_i = 0;
 
+
+
+    // Extended State Info
+    
     // method defined in eskf_prediction.cpp
 
-    bool AccelGyroPredict(
-        NominalState& nom_state, 
-        CovarianceMatrix& covar, 
+    InsStatus Eskf::AccelGyroPredict(
+        uint64_t dt,
         const AccelGyroUpdateData& ag_sample, 
-        uint64_t dt
+        FullState& prev_state
+    );
+
+
+    // overloaded prev_state to assume current state
+    InsStatus Eskf::AccelGyroPredict(
+        uint64_t dt,
+        const AccelGyroUpdateData& ag_sample
     );
 
     // methods defined in eskf_correction.cpp
     bool applyMagCorrection(
-        NominalState& nom_state, 
-        CovarianceMatrix& covar, 
+        NStateVec& nom_state, 
+        ESCovarMtx& covar, 
         const MagCorrectionData& mag_sample, 
         uint64_t dt
     );
 
     bool applyGnssCorrection(
-        NominalState& nom_state, 
-        CovarianceMatrix& covar, 
-        const GnssCorrectionData& gnss_sample, 
+        NStateVec& nom_state, 
+        ESCovarMtx& covar,
+        const GnssCorrectionData& gnss_sample,
         uint64_t dt
     );
 
     bool applyBaroCorrection(
-        NominalState& nom_state, 
-        CovarianceMatrix& covar, 
+        NStateVec& nom_state, 
+        ESCovarMtx& covar, 
         const BaroCorrectionData& baro_sample, 
         uint64_t dt
     );
 
     // utility eskf methods 
     Eigen::Quaternionf Eskf::RotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
+
+    bool Eskf::PropgateStatePreCorrection(NStateVec& nom_state, ESCovarMtx& covar, uint64_t dt);
 };
 
 }

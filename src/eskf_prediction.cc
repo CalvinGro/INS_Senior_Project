@@ -3,6 +3,7 @@ Author      - Calvin Gross
 Date        - 9/18/26
 Modified    - 9/28/26
 Modified    - 10/5/26
+Modified    - 10/8/26
 Title       - Error State Kalman Filter Prediction Methods
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file defines the methods to predict/update the state vector and
@@ -19,83 +20,108 @@ Description - This file defines the methods to predict/update the state vector a
 
 #include <variant>
 #include <stdint.h>
+#include <cmath>
+
+#define quat_tolerance 1e-5f
 
 namespace ins {
 
-bool Eskf::AccelGyroPredict(
-        NominalState& nom_state, 
-        CovarianceMatrix& covar, 
-        const AccelGyroUpdateData& ag_sample, 
-        uint64_t dt
+InsStatus Eskf::AccelGyroPredict(
+        uint64_t dt,
+        const AccelGyroUpdateData& ag_sample
     ) {
-    
-    float dt_seconds = static_cast<float>(dt) * 1e-6f;
-    NominalState next_state = {};
-    CovarianceMatrix next_covar = CovarianceMatrix::Zero();
+        return AccelGyroPredict(dt, ag_sample, cur_state);
+};
 
-    // Calculate rotation matrix R for the previous orientation (backward integration).
-    // Normalization is performed to prevent tiny rounding errors from growing.
-    Eigen::Matrix3f R = nom_state.angular_position.normalized().toRotationMatrix();
+InsStatus Eskf::AccelGyroPredict(
+        uint64_t dt,
+        const AccelGyroUpdateData& ag_sample, 
+        FullState& prev_state
+    ) {
+        
+        // Error Checks
+        if (dt == 0) return InsStatus::dt_of_0_for_ag;
+        if (!prev_state.escm.allFinite()) return InsStatus::escm_uninit_or_not_finite_ag;
+        if (
+            !prev_state.ns.angular_position.coeffs().allFinite() ||
+            !prev_state.ns.position.allFinite() ||
+            !prev_state.ns.velocity.allFinite() ||
+            !prev_state.ns.accel_bias.allFinite() ||
+            !prev_state.ns.gyro_bias.allFinite() ||
+            !std::isfinite(prev_state.ns.baro_bias)
+        ) return InsStatus::ns_uninit_or_not_finite_ag;
+        if (std::abs(prev_state.ns.angular_position.squaredNorm() - 1.0f) > quat_tolerance){
+            return InsStatus::ns_quaternion_not_unit_legth_ag;
+        }
+        if (!ag_sample.accel.allFinite() || !ag_sample.ang_vel.allFinite()) {
+            return InsStatus::sample_not_finite_ag;
+        }
 
 
-    // ___First, propagate the nominal state___
-    Eigen::Vector3f rotated_accel = (R * (ag_sample.accel - nom_state.accel_bias));
-    
-    next_state.position = nom_state.position + nom_state.velocity * dt_seconds + 0.5f * (rotated_accel + gravity) * dt_seconds * dt_seconds;
-    next_state.velocity = nom_state.velocity + (rotated_accel + gravity) * dt_seconds;
 
-    next_state.angular_position = (nom_state.angular_position * Eskf::RotationVectorToQuaternion(
-        (ag_sample.ang_vel - nom_state.gyro_bias) * dt_seconds)
-    ).normalized();
+        float dt_seconds = static_cast<float>(dt) * 1e-6f;
 
-    next_state.accel_bias = nom_state.accel_bias;
-    next_state.gyro_bias = nom_state.gyro_bias;
-    next_state.baro_bias = nom_state.baro_bias;
+        // Calculate rotation matrix R for the previous orientation (backward integration).
+        // Normalization is performed to prevent tiny rounding errors from growing.
+        Eigen::Matrix3f R = prev_state.ns.angular_position.normalized().toRotationMatrix();
 
 
-    // ___Second, propagate the covariance matrix___
+        // ___First, propagate the nominal state___
+        Eigen::Vector3f rotated_accel = (R * (ag_sample.accel - prev_state.ns.accel_bias));
 
-    // calculate the error-state transition matrix, fx
-    Eigen::Matrix<float, 16, 16> fx = Eigen::Matrix<float, 16, 16>::Zero();
+        Eigen::Vector3f new_pos = prev_state.ns.position + prev_state.ns.velocity * dt_seconds + 0.5f * (rotated_accel + gravity) * dt_seconds * dt_seconds;
+        Eigen::Vector3f new_vel = prev_state.ns.velocity + (rotated_accel + gravity) * dt_seconds;
 
-    // position
-    fx.block<3,3>(0,0) = Eigen::Matrix3f::Identity();
-    fx.block<3,3>(0,3) = Eigen::Matrix3f::Identity() * dt_seconds;
+        if (!new_pos.allFinite() ||!new_vel.allFinite()) return InsStatus::ns_overflow_ag;
+            
+        prev_state.ns.position = new_pos;
+        prev_state.ns.velocity = new_vel;
 
-    // velocity 
-    fx.block<3,3>(3,3) = Eigen::Matrix3f::Identity();
-    fx.block<3,3>(3,6) = -1 * rotated_accel.asSkewSymmetric().toDenseMatrix() * dt_seconds;
-    fx.block<3,3>(3,9) = -1 * R * dt_seconds;
-    
-    // orientation
-    // variance stored in global frame
-    fx.block<3,3>(6,6) = Eigen::Matrix3f::Identity();
-    fx.block<3,3>(6,12) = -1 * R * dt_seconds;
+        prev_state.ns.angular_position = (prev_state.ns.angular_position * Eskf::RotationVectorToQuaternion(
+            (ag_sample.ang_vel - prev_state.ns.gyro_bias) * dt_seconds)
+        ).normalized();
 
-    // biases
-    fx.block<3,3>(9,9) = Eigen::Matrix3f::Identity();
-    fx.block<3,3>(12,12) = Eigen::Matrix3f::Identity();
-    fx(15,15) = 1;
 
-    Eigen::Matrix<float, 16, 16> perturbation_covar = Eigen::Matrix<float, 16, 16>::Zero();
-    perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_prediction_noises.velocity_vgr * dt_seconds;
-    perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_prediction_noises.orientation_vgr * dt_seconds;
-    perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_prediction_noises.accel_bias_vgr * dt_seconds;
-    perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_prediction_noises.gyro_bias_vgr * dt_seconds;
-    perturbation_covar(15,15) = conf_prediction_noises.baro_bias_vgr * dt_seconds;
+        // ___Second, propagate the covariance matrix___
 
-    next_covar = fx * covar * fx.transpose() + perturbation_covar;
+        // calculate the error-state transition matrix, fx
+        Eigen::Matrix<float, 16, 16> fx = Eigen::Matrix<float, 16, 16>::Zero();
 
-    nom_state = next_state;
-    covar = next_covar;
+        // position
+        fx.block<3,3>(0,0) = Eigen::Matrix3f::Identity();
+        fx.block<3,3>(0,3) = Eigen::Matrix3f::Identity() * dt_seconds;
 
-    return true;
+        // velocity 
+        fx.block<3,3>(3,3) = Eigen::Matrix3f::Identity();
+        fx.block<3,3>(3,6) = -1 * rotated_accel.asSkewSymmetric().toDenseMatrix() * dt_seconds;
+        fx.block<3,3>(3,9) = -1 * R * dt_seconds;
+        
+        // orientation
+        // variance stored in global frame
+        fx.block<3,3>(6,6) = Eigen::Matrix3f::Identity();
+        fx.block<3,3>(6,12) = -1 * R * dt_seconds;
+
+        // biases
+        fx.block<3,3>(9,9) = Eigen::Matrix3f::Identity();
+        fx.block<3,3>(12,12) = Eigen::Matrix3f::Identity();
+        fx(15,15) = 1;
+
+        Eigen::Matrix<float, 16, 16> perturbation_covar = Eigen::Matrix<float, 16, 16>::Zero();
+        perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_prediction_noises.velocity_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_prediction_noises.orientation_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_prediction_noises.accel_bias_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_prediction_noises.gyro_bias_vgr * dt_seconds;
+        perturbation_covar(15,15) = conf_prediction_noises.baro_bias_vgr * dt_seconds;
+
+        prev_state.escm = fx * prev_state.escm * fx.transpose() + perturbation_covar;
+
+        return InsStatus::ok;
 };
 
 }
 
 // bool Eskf::applyAccelPrediction(
-//         NominalState& nom_state, 
+//         NominalState& cur_state.ns, 
 //         CovarianceMatrix& covar, 
 //         const AccelUpdateData& accel_sample, 
 //         uint16_t dt
@@ -105,7 +131,7 @@ bool Eskf::AccelGyroPredict(
 
 
 // bool Eskf::applyGyroPrediction(
-//         NominalState& nom_state, 
+//         NominalState& cur_state.ns, 
 //         CovarianceMatrix& covar, 
 //         const GyroUpdateData& gyro_sample, 
 //         uint16_t dt

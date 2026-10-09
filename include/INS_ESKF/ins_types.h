@@ -1,6 +1,7 @@
 /*
 Author      - Calvin Gross
 Date        - 9/27/26
+Modified    - 10/8/26
 Title       - Integrated Navigation System Types
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header file that declares all the types that will be used
@@ -31,6 +32,7 @@ namespace ins {
     };
 
     struct GnssCorrectionData {
+        // pos in ENU
         Eigen::Vector3f pos;
     };
 
@@ -48,7 +50,20 @@ namespace ins {
         uint64_t timestamp;
     };
 
-    struct NominalState {
+    // enum of every possible status/error code in Ins, Eskf, or Delayed State Filters
+    enum class InsStatus {
+        ok,
+        dt_of_0_for_ag,
+        escm_uninit_or_not_finite_ag,
+        ns_uninit_or_not_finite_ag,
+        ns_quaternion_not_unit_legth_ag,
+        ns_overflow_ag,
+        invalid_measurment,
+        sample_not_finite_ag,
+    };
+
+
+    struct NStateVec {
         Eigen::Vector3f position = Eigen::Vector3f::Zero();
         Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
         Eigen::Quaternionf angular_position = Eigen::Quaternionf::Identity();
@@ -57,14 +72,17 @@ namespace ins {
         float baro_bias = 0.0f;
     };
 
-    using CovarianceMatrix = Eigen::Matrix<float, 16, 16>;
 
-    enum class EsfkStatus {
-        success,
-        eskf_uninitialized,
-        invalid_measurment,
-        error
+    using ESCovarMtx = Eigen::Matrix<float, 16, 16>;
+
+    // Full State Info (contains everything needed to propagate any measurement)
+    struct FullState {
+        NStateVec ns;                  // nominal-state vector
+        ESCovarMtx escm;               // error-state covariance matrix
+        AccelGyroUpdateData last_pred; // last accel + gyro prediction (zero order holding for corrections)
+        uint64_t last_timestamp;       // time associated with lastest measurement (correction or prediction)
     };
+
 
     // Variance Growth Rates
     struct ConfVarGrowthRates {
