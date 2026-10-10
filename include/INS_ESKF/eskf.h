@@ -1,11 +1,6 @@
 /*
 Author      - Calvin Gross
-Date        - 9/8/26
-Modified    - 9/10/26
-Modified    - 9/11/26
-Modified    - 9/13/26
-Modified    - 9/18/26
-Modified    - 9/19/26
+Start Date  - 9/8/26
 Title       - Error State Kalman Filter Header
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file...
@@ -52,29 +47,31 @@ class Eskf
         FullState& prev_state
     );
 
-
-    // overloaded prev_state to assume current state
+    // overloaded - Used when updating the current states
     InsStatus Eskf::AccelGyroPredict(
         uint64_t dt,
         const AccelGyroUpdateData& ag_sample
     );
 
+    // overloaded - Used when propagating to a given timestamp before correction
+    InsStatus Eskf::AccelGyroPredict(uint64_t dt);
+
+
     // methods defined in eskf_correction.cpp
-    bool applyMagCorrection(
+    InsStatus applyMagCorrection(
         NStateVec& nom_state, 
         ESCovarMtx& covar, 
         const MagCorrectionData& mag_sample, 
         uint64_t dt
     );
 
-    bool applyGnssCorrection(
-        NStateVec& nom_state, 
-        ESCovarMtx& covar,
+    InsStatus applyGnssCorrection(
+        uint64_t dt,
         const GnssCorrectionData& gnss_sample,
-        uint64_t dt
+        FullState& prev_state
     );
 
-    bool applyBaroCorrection(
+    InsStatus applyBaroCorrection(
         NStateVec& nom_state, 
         ESCovarMtx& covar, 
         const BaroCorrectionData& baro_sample, 
@@ -84,7 +81,7 @@ class Eskf
     // utility eskf methods 
     Eigen::Quaternionf Eskf::RotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
 
-    bool Eskf::PropgateStatePreCorrection(NStateVec& nom_state, ESCovarMtx& covar, uint64_t dt);
+    void Eskf::CorrectionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns);
 };
 
 }

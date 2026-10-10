@@ -1,6 +1,6 @@
 /*
 Author      - Calvin Gross
-Date        - 9/27/26
+Start Date  - 9/27/26
 Title       - Integrated Navigation System
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header file that declares the user facing methods and 

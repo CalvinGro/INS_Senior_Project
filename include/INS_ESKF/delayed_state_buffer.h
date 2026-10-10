@@ -1,9 +1,6 @@
 /*
 Author      - Calvin Gross
-Date        - 9/13/26
-Modified    - 9/14/26
-Modified    - 9/15/26
-Modified    - 9/18/26
+Start Date  - 9/13/26
 Title       - Delayed State Buffer Header
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header file for the Delayed State Buffer class.

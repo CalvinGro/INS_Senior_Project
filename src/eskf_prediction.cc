@@ -1,9 +1,6 @@
 /*
 Author      - Calvin Gross
-Date        - 9/18/26
-Modified    - 9/28/26
-Modified    - 10/5/26
-Modified    - 10/8/26
+Start Date  - 9/18/26
 Title       - Error State Kalman Filter Prediction Methods
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file defines the methods to predict/update the state vector and
@@ -26,10 +23,12 @@ Description - This file defines the methods to predict/update the state vector a
 
 namespace ins {
 
-InsStatus Eskf::AccelGyroPredict(
-        uint64_t dt,
-        const AccelGyroUpdateData& ag_sample
-    ) {
+
+InsStatus Eskf::AccelGyroPredict(uint64_t dt) {
+        return AccelGyroPredict(dt, cur_state.last_pred, cur_state);
+};
+
+InsStatus Eskf::AccelGyroPredict(uint64_t dt, const AccelGyroUpdateData& ag_sample) {
         return AccelGyroPredict(dt, ag_sample, cur_state);
 };
 
@@ -114,6 +113,8 @@ InsStatus Eskf::AccelGyroPredict(
         perturbation_covar(15,15) = conf_prediction_noises.baro_bias_vgr * dt_seconds;
 
         prev_state.escm = fx * prev_state.escm * fx.transpose() + perturbation_covar;
+
+        prev_state.last_pred = ag_sample;
 
         return InsStatus::ok;
 };

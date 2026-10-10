@@ -1,7 +1,6 @@
 /*
 Author      - Calvin Gross
-Date        - 9/27/26
-Modified    - 10/8/26
+Start Date  - 9/27/26
 Title       - Integrated Navigation System Types
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header file that declares all the types that will be used
@@ -34,6 +33,8 @@ namespace ins {
     struct GnssCorrectionData {
         // pos in ENU
         Eigen::Vector3f pos;
+        // measurement noise
+        Eigen::Vector3f mea_noise;
     };
 
     struct BaroCorrectionData {
@@ -58,8 +59,12 @@ namespace ins {
         ns_uninit_or_not_finite_ag,
         ns_quaternion_not_unit_legth_ag,
         ns_overflow_ag,
-        invalid_measurment,
         sample_not_finite_ag,
+
+        escm_uninit_or_not_finite_gnss,
+        ns_uninit_or_not_finite_gnss,
+        ns_quaternion_not_unit_legth_gnss,
+        sample_not_finite_gnss
     };
 
 
