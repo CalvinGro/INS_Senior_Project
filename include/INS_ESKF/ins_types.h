@@ -34,11 +34,12 @@ namespace ins {
         // pos in ENU
         Eigen::Vector3f pos;
         // measurement noise
-        Eigen::Vector3f mea_noise;
+        Eigen::Vector3f gnss_noise;
     };
 
     struct BaroCorrectionData {
         float z_pos;
+        float baro_noise;
     };
 
     struct Measurement {
@@ -54,6 +55,8 @@ namespace ins {
     // enum of every possible status/error code in Ins, Eskf, or Delayed State Filters
     enum class InsStatus {
         ok,
+
+        // accel + gyro prediction errors
         dt_of_0_for_ag,
         escm_uninit_or_not_finite_ag,
         ns_uninit_or_not_finite_ag,
@@ -61,10 +64,17 @@ namespace ins {
         ns_overflow_ag,
         sample_not_finite_ag,
 
+        // gnss errors
         escm_uninit_or_not_finite_gnss,
         ns_uninit_or_not_finite_gnss,
         ns_quaternion_not_unit_legth_gnss,
-        sample_not_finite_gnss
+        sample_not_finite_gnss,
+
+        // barometer errors
+        escm_uninit_or_not_finite_b,
+        ns_uninit_or_not_finite_b,
+        ns_quaternion_not_unit_legth_b,
+        sample_not_finite_b
     };
 
 

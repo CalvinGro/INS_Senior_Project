@@ -39,7 +39,7 @@ class Eskf
 
     // Extended State Info
     
-    // method defined in eskf_prediction.cpp
+    // methods defined in eskf_prediction.cpp
 
     InsStatus Eskf::AccelGyroPredict(
         uint64_t dt,
@@ -47,7 +47,7 @@ class Eskf
         FullState& prev_state
     );
 
-    // overloaded - Used when updating the current states
+    // overloaded - Used when updating the current state
     InsStatus Eskf::AccelGyroPredict(
         uint64_t dt,
         const AccelGyroUpdateData& ag_sample
@@ -58,6 +58,7 @@ class Eskf
 
 
     // methods defined in eskf_correction.cpp
+
     InsStatus applyMagCorrection(
         NStateVec& nom_state, 
         ESCovarMtx& covar, 
@@ -65,17 +66,30 @@ class Eskf
         uint64_t dt
     );
 
+
     InsStatus applyGnssCorrection(
         uint64_t dt,
         const GnssCorrectionData& gnss_sample,
         FullState& prev_state
     );
 
-    InsStatus applyBaroCorrection(
-        NStateVec& nom_state, 
-        ESCovarMtx& covar, 
-        const BaroCorrectionData& baro_sample, 
-        uint64_t dt
+    // overloaded - Used when correcting the current state with a gnss sample
+    InsStatus Eskf::applyGnssCorrection(
+        uint64_t dt,
+        const GnssCorrectionData& gnss_sample
+    );
+
+
+    InsStatus Eskf::applyBaroCorrection(
+        uint64_t dt,
+        const BaroCorrectionData& baro_sample,
+        FullState& prev_state
+    );
+
+    // overloaded - Used when correcting the current state with a barometer sample
+    InsStatus Eskf::applyBaroCorrection(
+        uint64_t dt,
+        const BaroCorrectionData& baro_sample
     );
 
     // utility eskf methods 

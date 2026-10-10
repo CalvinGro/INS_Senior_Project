@@ -120,22 +120,3 @@ InsStatus Eskf::AccelGyroPredict(
 };
 
 }
-
-// bool Eskf::applyAccelPrediction(
-//         NominalState& cur_state.ns, 
-//         CovarianceMatrix& covar, 
-//         const AccelUpdateData& accel_sample, 
-//         uint16_t dt
-//     ) {
-
-// };
-
-
-// bool Eskf::applyGyroPrediction(
-//         NominalState& cur_state.ns, 
-//         CovarianceMatrix& covar, 
-//         const GyroUpdateData& gyro_sample, 
-//         uint16_t dt
-//     ) {
-
-// };
