@@ -1,8 +1,6 @@
 /*
 Author      - Calvin Gross
-Date        - 9/8/26
-Modified    - 9/18/26
-Modified    - 9/19/26
+Start Date  - 9/8/26
 Title       - Error State Kalman Filter
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file defines the public methods for interacting with the eskf.
@@ -85,8 +83,8 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
         int16_t prev_mea_i = -1;
 
         uint64_t prev_ag_timestamp = ds_buffer.StateBuffer[start_state_i].prev_timestamp;
-        NominalState tracked_state = ds_buffer.StateBuffer[start_state_i].nominal_state;
-        CovarianceMatrix tracked_covar = ds_buffer.StateBuffer[start_state_i].covar_matrix;
+        NStateVec tracked_state = ds_buffer.StateBuffer[start_state_i].nominal_state;
+        ESCovarMtx tracked_covar = ds_buffer.StateBuffer[start_state_i].covar_matrix;
 
         bool applied_new = false;
 
@@ -168,7 +166,7 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
     return true;
 };
 
-bool Eskf::getCurrentState(NominalState& nominal_state) {
+bool Eskf::getCurrentState(NStateVec& nominal_state) {
     nominal_state = cur_nominal_state;
     return true;
 };

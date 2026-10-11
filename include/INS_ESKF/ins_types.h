@@ -27,7 +27,7 @@ namespace ins {
     };
 
     struct MagCorrectionData {
-        Eigen::Vector3f ang_pos;
+        Eigen::Vector3f mag_field_body;
     };
 
     struct GnssCorrectionData {
@@ -39,7 +39,6 @@ namespace ins {
 
     struct BaroCorrectionData {
         float z_pos;
-        float baro_noise;
     };
 
     struct Measurement {
@@ -74,7 +73,13 @@ namespace ins {
         escm_uninit_or_not_finite_b,
         ns_uninit_or_not_finite_b,
         ns_quaternion_not_unit_legth_b,
-        sample_not_finite_b
+        sample_not_finite_b,
+
+        // magnetometer errors
+        escm_uninit_or_not_finite_m,
+        ns_uninit_or_not_finite_m,
+        ns_quaternion_not_unit_legth_m,
+        sample_not_finite_m
     };
 
 
@@ -106,5 +111,17 @@ namespace ins {
         Eigen::Vector3f accel_bias_vgr = Eigen::Vector3f::Zero();
         Eigen::Vector3f gyro_bias_vgr = Eigen::Vector3f::Zero();
         float baro_bias_vgr = 0.0f;
+    };
+
+    struct MeasurementVars {
+        Eigen::Vector3f magnetometer_var = Eigen::Vector3f::Zero();
+        float baro_var;
+    };
+
+    struct MagnetometerCalibration {
+        Eigen::Vector3f offset = Eigen::Vector3f::Zero();
+        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f mag_field_enu = Eigen::Vector3f::Zero();
     };
 }

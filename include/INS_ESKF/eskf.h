@@ -27,6 +27,8 @@ class Eskf
     FullState cur_state;
 
     ConfVarGrowthRates conf_prediction_noises;
+    MeasurementVars conf_mea_vars;
+    MagnetometerCalibration conf_mag_cal;
 
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
 
@@ -59,11 +61,10 @@ class Eskf
 
     // methods defined in eskf_correction.cpp
 
-    InsStatus applyMagCorrection(
-        NStateVec& nom_state, 
-        ESCovarMtx& covar, 
-        const MagCorrectionData& mag_sample, 
-        uint64_t dt
+    InsStatus Eskf::applyMagCorrection(
+        uint64_t dt,
+        const MagCorrectionData& mag_sample,
+        FullState& prev_state
     );
 
 
