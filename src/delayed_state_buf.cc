@@ -10,13 +10,13 @@ Description - This is the header function for the Delayed State Buffer class.
 */
 
 #include "ins_types.h"
-#include "delayed_state_buffer.h"
+#include "delayed_state_buf.h"
 
 namespace ins {
 
-// Free-List Methods
 
-int16_t DelayedStateBuffer::acquireMeasurementIndex(void) {
+// Free-List Methods
+int16_t DelayedStateBuf::acquireMeasurementIndex(void) {
     if (this->free_list_index == -1) return -1;
     int16_t available_index = this->MeasurementFreeList[this->free_list_index];
     this->free_list_index--;
@@ -24,7 +24,7 @@ int16_t DelayedStateBuffer::acquireMeasurementIndex(void) {
 };
 
 
-void DelayedStateBuffer::releaseMeasurementIndex(int16_t released_index) {
+void DelayedStateBuf::releaseMeasurementIndex(int16_t released_index) {
     this->free_list_index++;
     this->MeasurementFreeList[this->free_list_index] = released_index;
 };
@@ -34,12 +34,12 @@ void DelayedStateBuffer::releaseMeasurementIndex(int16_t released_index) {
 // Fixed-Capacity Linked-List for storing all measurements 
 // and Circular Buffer for storing state checkpoints
 
-uint64_t DelayedStateBuffer::getStateTime(int16_t state_index) {
+uint64_t DelayedStateBuf::getStateTime(int16_t state_index) {
     return MeasurementList[StateBuffer[state_index].measurement_index].measurement.timestamp;
 };
 
 
-bool  DelayedStateBuffer::removeLastState(void) {
+bool  DelayedStateBuf::removeLastState(void) {
     if (oldest_state < 0 || oldest_state >= StateCapacity) return false;
 
     int16_t next_measurement;
@@ -72,7 +72,7 @@ bool  DelayedStateBuffer::removeLastState(void) {
 };
 
 
-DelayedStateBuffer::DelayStatus DelayedStateBuffer::checkIfDelayed(uint64_t timestamp) {
+DelayStatus DelayedStateBuf::checkIfDelayed(uint64_t timestamp) {
 
     // check if timestamp is on-time (the newest timestamp)
     if(tail_measurement == -1 || MeasurementList[tail_measurement].measurement.timestamp <= timestamp) {
@@ -90,7 +90,7 @@ DelayedStateBuffer::DelayStatus DelayedStateBuffer::checkIfDelayed(uint64_t time
 };
 
 
-int16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
+int16_t  DelayedStateBuf::getStartState(uint64_t timestamp) {
     
     // lambda function for transforming bi-search index into circular buffer index
     std::function<int16_t(int16_t)> to_cb_index = [=](int16_t i) {
@@ -126,12 +126,12 @@ int16_t  DelayedStateBuffer::getStartState(uint64_t timestamp) {
 };
 
 
-int16_t DelayedStateBuffer::getMeasurementsSinceCheckpoint(void) {
+int16_t DelayedStateBuf::getMeasurementsSinceCheckpoint(void) {
     return measurements_since_checkpoint;
 }
 
 
-bool DelayedStateBuffer::insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement) {
+bool DelayedStateBuf::insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement) {
   
     // if measurement linked-list has space.
     int16_t new_index = acquireMeasurementIndex();
@@ -161,7 +161,7 @@ bool DelayedStateBuffer::insertMeasurementAfter(const int16_t parent_measurement
 }
 
 
-bool DelayedStateBuffer::appendMeasurement(const Measurement& new_measurement) {
+bool DelayedStateBuf::appendMeasurement(const Measurement& new_measurement) {
 
     // if measurement linked-list has space.
     int16_t new_index = acquireMeasurementIndex();
@@ -189,7 +189,7 @@ bool DelayedStateBuffer::appendMeasurement(const Measurement& new_measurement) {
 
 
 
-bool DelayedStateBuffer::appendStateAndMeasurement(
+bool DelayedStateBuf::appendStateAndMeasurement(
     const Measurement& new_measurement, 
     const NStateVec& new_nominal_state, 
     const ESCovarMtx& new_covariance

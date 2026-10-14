@@ -31,7 +31,7 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
         // save state only if threshold has been reached and the previous measurement is a
         // accel/gyro measurement, so that the saved previous timestamp is relevant.
         if (mea_since_checkpnt >= DelayedStateBuffer::MeasurementThreshold &&
-            std::holds_alternative<AccelGyroUpdateData>(new_measurement.data)) {
+            std::holds_alternative<AGInternalSample>(new_measurement.data)) {
             append_status =  ds_buffer.appendStateAndMeasurement(new_measurement, this->cur_nominal_state, this->cur_covariance_matrix);
         } else {
             append_status = ds_buffer.appendMeasurement(new_measurement);
@@ -47,20 +47,20 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
 
             // constexpr only includes the branch with the correct type after compilation
             // for each types generated lambda function.
-            if constexpr (std::is_same_v<T, AccelGyroUpdateData>) {
+            if constexpr (std::is_same_v<T, AGInternalSample>) {
                 return AccelGyroPredict(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
-            } else if constexpr (std::is_same_v<T, MagCorrectionData>) {
+            } else if constexpr (std::is_same_v<T, MagInternalSample>) {
                 return applyMagCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
-            } else if constexpr (std::is_same_v<T, GnssCorrectionData>) {
+            } else if constexpr (std::is_same_v<T, GnssInternalSample>) {
                 return applyGnssCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
-            } else if constexpr (std::is_same_v<T, BaroCorrectionData>) {
+            } else if constexpr (std::is_same_v<T, BaroInternalSample>) {
                 return applyBaroCorrection(this->cur_nominal_state, this->cur_covariance_matrix, sample, dt);
             }
         }, new_measurement.data);
         if (!apply_status) return apply_status;
     
         // update timestamp if it is a accel/gyro measurement.
-        if (std::holds_alternative<AccelGyroUpdateData>(new_measurement.data)) {
+        if (std::holds_alternative<AGInternalSample>(new_measurement.data)) {
             cur_ag_timestamp = new_measurement.timestamp;
         }
 
@@ -129,20 +129,20 @@ bool Ins::applyMeasurement(const Measurement& new_measurement) {
 
                 // constexpr only includes the branch with the correct type after compilation
                 // for each types generated lambda function.
-                if constexpr (std::is_same_v<T, AccelGyroUpdateData>) {
+                if constexpr (std::is_same_v<T, AGInternalSample>) {
                     return AccelGyroPredict(tracked_state, tracked_covar, sample, dt);
-                } else if constexpr (std::is_same_v<T, MagCorrectionData>) {
+                } else if constexpr (std::is_same_v<T, MagInternalSample>) {
                     return applyMagCorrection(tracked_state, tracked_covar, sample, dt);
-                } else if constexpr (std::is_same_v<T, GnssCorrectionData>) {
+                } else if constexpr (std::is_same_v<T, GnssInternalSample>) {
                     return applyGnssCorrection(tracked_state, tracked_covar, sample, dt);
-                } else if constexpr (std::is_same_v<T, BaroCorrectionData>) {
+                } else if constexpr (std::is_same_v<T, BaroInternalSample>) {
                     return applyBaroCorrection(tracked_state, tracked_covar, sample, dt);
                 }
             }, ds_buffer.MeasurementList[measurement_i].measurement.data);
             if (!apply_status) return apply_status;
 
             // set the previous accel/gyro timestamp if the current measurement is accel/gyro.
-            if (std::holds_alternative<AccelGyroUpdateData>(ds_buffer.MeasurementList[measurement_i].measurement.data)) {
+            if (std::holds_alternative<AGInternalSample>(ds_buffer.MeasurementList[measurement_i].measurement.data)) {
                 prev_ag_timestamp = ds_buffer.MeasurementList[measurement_i].measurement.timestamp;
             }
 

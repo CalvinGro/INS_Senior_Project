@@ -24,7 +24,7 @@ namespace ins {
 
 InsStatus Eskf::applyMagCorrection(
         uint64_t dt,
-        const MagCorrectionData& mag_sample,
+        const MagInternalSample& mag_sample,
         FullState& prev_state
     ) {
         // Error Checks
@@ -112,14 +112,14 @@ InsStatus Eskf::applyMagCorrection(
  */
 InsStatus Eskf::applyGnssCorrection(
         uint64_t dt,
-        const GnssCorrectionData& gnss_sample
+        const GnssInternalSample& gnss_sample
     ) {
         return applyGnssCorrection(dt, gnss_sample, cur_state);
 };
 
 InsStatus Eskf::applyGnssCorrection(
         uint64_t dt,
-        const GnssCorrectionData& gnss_sample,
+        const GnssInternalSample& gnss_sample,
         FullState& prev_state
     ) {
 
@@ -198,14 +198,14 @@ InsStatus Eskf::applyGnssCorrection(
  */
 InsStatus Eskf::applyBaroCorrection(
         uint64_t dt,
-        const BaroCorrectionData& baro_sample
+        const BaroInternalSample& baro_sample
     ) {
         return applyBaroCorrection(dt, baro_sample, cur_state);
 };
 
 InsStatus Eskf::applyBaroCorrection(
         uint64_t dt,
-        const BaroCorrectionData& baro_sample,
+        const BaroInternalSample& baro_sample,
         FullState& prev_state
     ) {
                 

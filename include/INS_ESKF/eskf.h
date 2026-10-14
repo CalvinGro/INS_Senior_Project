@@ -21,38 +21,28 @@ namespace ins {
 
 class Eskf
 {
-    static const uint16_t OutBoundsLogSize = 50;
-
-    // the most resent 
+    // the most recent state info
     FullState cur_state;
 
-    ConfVarGrowthRates conf_prediction_noises;
+    // constants that are preconfigured or set during init before initializing the Eskf
+    ConfVarGrowthRates conf_state_vgr;
     MeasurementVars conf_mea_vars;
     MagnetometerCalibration conf_mag_cal;
 
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
-
-    // DelayedStateBuffer ds_buffer;
-
-    Measurement out_of_bounds_log[OutBoundsLogSize] = {};
-    uint16_t oob_log_i = 0;
-
-
-
-    // Extended State Info
     
     // methods defined in eskf_prediction.cpp
 
     InsStatus Eskf::AccelGyroPredict(
         uint64_t dt,
-        const AccelGyroUpdateData& ag_sample, 
+        const AGInternalSample& ag_sample, 
         FullState& prev_state
     );
 
     // overloaded - Used when updating the current state
     InsStatus Eskf::AccelGyroPredict(
         uint64_t dt,
-        const AccelGyroUpdateData& ag_sample
+        const AGInternalSample& ag_sample
     );
 
     // overloaded - Used when propagating to a given timestamp before correction
@@ -63,34 +53,34 @@ class Eskf
 
     InsStatus Eskf::applyMagCorrection(
         uint64_t dt,
-        const MagCorrectionData& mag_sample,
+        const MagInternalSample& mag_sample,
         FullState& prev_state
     );
 
 
     InsStatus applyGnssCorrection(
         uint64_t dt,
-        const GnssCorrectionData& gnss_sample,
+        const GnssInternalSample& gnss_sample,
         FullState& prev_state
     );
 
     // overloaded - Used when correcting the current state with a gnss sample
     InsStatus Eskf::applyGnssCorrection(
         uint64_t dt,
-        const GnssCorrectionData& gnss_sample
+        const GnssInternalSample& gnss_sample
     );
 
 
     InsStatus Eskf::applyBaroCorrection(
         uint64_t dt,
-        const BaroCorrectionData& baro_sample,
+        const BaroInternalSample& baro_sample,
         FullState& prev_state
     );
 
     // overloaded - Used when correcting the current state with a barometer sample
     InsStatus Eskf::applyBaroCorrection(
         uint64_t dt,
-        const BaroCorrectionData& baro_sample
+        const BaroInternalSample& baro_sample
     );
 
     // utility eskf methods 

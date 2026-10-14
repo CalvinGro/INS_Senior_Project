@@ -21,7 +21,7 @@ Description - This is the header file for the Delayed State Buffer class.
 
 namespace ins {
 
-class DelayedStateBuffer
+class DelayedStateBuf
 {
 public:
 
@@ -46,12 +46,6 @@ private:
 
 public:
 
-    enum class DelayStatus {
-        out_of_bounds,
-        delayed,
-        on_time
-    };
-
     struct StateCheckpoint {
         ESCovarMtx covar_matrix;
         NStateVec nominal_state;
@@ -67,21 +61,24 @@ public:
 
 
     // Measurement Fixed-Size Linked-List
-    std::array<DelayedStateBuffer::MeasurementNode, MeasurementCapacity> MeasurementList;
+    std::array<DelayedStateBuf::MeasurementNode, MeasurementCapacity> MeasurementList;
     int16_t tail_measurement = -1;
     int16_t recorded_measurements = 0;
 
     // State Circular Buffer
-    std::array<DelayedStateBuffer::StateCheckpoint, StateCapacity> StateBuffer;
+    std::array<DelayedStateBuf::StateCheckpoint, StateCapacity> StateBuffer;
     int16_t oldest_state = -1;
     int16_t newest_state = -1;
     int16_t recorded_states = 0;
     int16_t measurements_since_checkpoint = 0;
 
-
-    uint64_t DelayedStateBuffer::getStateTime(int16_t state_index);
+public:
 
     DelayStatus checkIfDelayed(uint64_t timestamp);
+
+    
+
+    uint64_t DelayedStateBuf::getStateTime(int16_t state_index);
 
     int16_t getStartState(uint64_t timestamp);
 

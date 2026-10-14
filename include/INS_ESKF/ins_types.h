@@ -20,33 +20,33 @@ Description - This is the header file that declares all the types that will be u
 
 namespace ins {
     
-    // Definitions of Measurement Types
-    struct AccelGyroUpdateData {
+    // Definitions of Internal Measurement Types
+    struct AGInternalSample {
         Eigen::Vector3f accel;
         Eigen::Vector3f ang_vel;
     };
 
-    struct MagCorrectionData {
+    struct MagInternalSample {
         Eigen::Vector3f mag_field_body;
     };
 
-    struct GnssCorrectionData {
+    struct GnssInternalSample {
         // pos in ENU
         Eigen::Vector3f pos;
         // measurement noise
         Eigen::Vector3f gnss_noise;
     };
 
-    struct BaroCorrectionData {
+    struct BaroInternalSample {
         float z_pos;
     };
 
     struct Measurement {
         std::variant<
-            AccelGyroUpdateData,
-            MagCorrectionData,
-            GnssCorrectionData,
-            BaroCorrectionData
+            AGInternalSample,
+            MagInternalSample,
+            GnssInternalSample,
+            BaroInternalSample
         > data;
         uint64_t timestamp;
     };
@@ -79,10 +79,25 @@ namespace ins {
         escm_uninit_or_not_finite_m,
         ns_uninit_or_not_finite_m,
         ns_quaternion_not_unit_legth_m,
-        sample_not_finite_m
+        sample_not_finite_m,
+
+        // free-list errors
+        all_nodes_full,
+        attempted_to_acquire_invalid_index,
+        attempted_to_release_invalid_index,
+
+        // delayed state FR errors
+        recorded_states_uninit,
+        bi_search_failed_in_findRecalcCheckpoint
     };
 
+    enum class DelayStatus {
+        out_of_bounds,
+        delayed,
+        on_time
+    };
 
+    
     struct NStateVec {
         Eigen::Vector3f position = Eigen::Vector3f::Zero();
         Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
@@ -99,12 +114,13 @@ namespace ins {
     struct FullState {
         NStateVec ns;                  // nominal-state vector
         ESCovarMtx escm;               // error-state covariance matrix
-        AccelGyroUpdateData last_pred; // last accel + gyro prediction (zero order holding for corrections)
+        AGInternalSample last_pred;    // last accel + gyro prediction (zero order holding for corrections)
         uint64_t last_timestamp;       // time associated with lastest measurement (correction or prediction)
     };
 
 
-    // Variance Growth Rates
+    // Constants that are preconfigured or set at init.
+    // Grouped into: State Variance Growth Rates, Measurement Variances, and Magnetometer Calibration
     struct ConfVarGrowthRates {
         Eigen::Vector3f velocity_vgr = Eigen::Vector3f::Zero();
         Eigen::Vector3f orientation_vgr = Eigen::Vector3f::Zero();

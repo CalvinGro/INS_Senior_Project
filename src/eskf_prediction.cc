@@ -28,13 +28,13 @@ InsStatus Eskf::AccelGyroPredict(uint64_t dt) {
         return AccelGyroPredict(dt, cur_state.last_pred, cur_state);
 };
 
-InsStatus Eskf::AccelGyroPredict(uint64_t dt, const AccelGyroUpdateData& ag_sample) {
+InsStatus Eskf::AccelGyroPredict(uint64_t dt, const AGInternalSample& ag_sample) {
         return AccelGyroPredict(dt, ag_sample, cur_state);
 };
 
 InsStatus Eskf::AccelGyroPredict(
         uint64_t dt,
-        const AccelGyroUpdateData& ag_sample, 
+        const AGInternalSample& ag_sample, 
         FullState& prev_state
     ) {
         
@@ -106,11 +106,11 @@ InsStatus Eskf::AccelGyroPredict(
         fx(15,15) = 1;
 
         Eigen::Matrix<float, 16, 16> perturbation_covar = Eigen::Matrix<float, 16, 16>::Zero();
-        perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_prediction_noises.velocity_vgr * dt_seconds;
-        perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_prediction_noises.orientation_vgr * dt_seconds;
-        perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_prediction_noises.accel_bias_vgr * dt_seconds;
-        perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_prediction_noises.gyro_bias_vgr * dt_seconds;
-        perturbation_covar(15,15) = conf_prediction_noises.baro_bias_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_state_vgr.velocity_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_state_vgr.orientation_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_state_vgr.accel_bias_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_state_vgr.gyro_bias_vgr * dt_seconds;
+        perturbation_covar(15,15) = conf_state_vgr.baro_bias_vgr * dt_seconds;
 
         prev_state.escm = fx * prev_state.escm * fx.transpose() + perturbation_covar;
 
