@@ -81,7 +81,7 @@ InsStatus Eskf::applyMagCorrection(
         prev_state.escm = (Eigen::Matrix<float,16,16>::Identity() - K * H) * prev_state.escm;
 
         // Inject the error-state back into the nominal-state
-        CorrectionInjection(es, prev_state.ns);
+        correctionInjection(es, prev_state.ns);
         
         // Covariance Reset Jacobian (G) - Used to convert the error-state covariance matrix's 
         // orientation variance to be expressed in terms of the new nominal state.
@@ -167,7 +167,7 @@ InsStatus Eskf::applyGnssCorrection(
         prev_state.escm = (Eigen::Matrix<float,16,16>::Identity() - K * H) * prev_state.escm;
 
         // Inject the error-state back into the nominal-state
-        CorrectionInjection(es, prev_state.ns);
+        correctionInjection(es, prev_state.ns);
         
         // Covariance Reset Jacobian (G) - Used to convert the error-state covariance matrix's 
         // orientation variance to be expressed in terms of the new nominal state.
@@ -251,7 +251,7 @@ InsStatus Eskf::applyBaroCorrection(
         prev_state.escm = ((Eigen::Matrix<float,16,16>::Identity() - K * H.transpose()) * prev_state.escm).eval();
 
         // Inject the error-state back into the nominal-state
-        CorrectionInjection(es, prev_state.ns);
+        correctionInjection(es, prev_state.ns);
         
         // Covariance Reset Jacobian (G) - Used to convert the error-state covariance matrix's 
         // orientation variance to be expressed in terms of the new nominal state.

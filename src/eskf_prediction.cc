@@ -76,7 +76,7 @@ InsStatus Eskf::applyAccelGyroPredict(
         prev_state.ns.position = new_pos;
         prev_state.ns.velocity = new_vel;
 
-        prev_state.ns.angular_position = (prev_state.ns.angular_position * Eskf::RotationVectorToQuaternion(
+        prev_state.ns.angular_position = (prev_state.ns.angular_position * Eskf::rotationVectorToQuaternion(
             (ag_sample.ang_vel - prev_state.ns.gyro_bias) * dt_seconds)
         ).normalized();
 
