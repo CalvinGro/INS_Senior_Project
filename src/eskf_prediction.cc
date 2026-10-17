@@ -24,15 +24,15 @@ Description - This file defines the methods to predict/update the state vector a
 namespace ins {
 
 
-InsStatus Eskf::AccelGyroPredict(uint64_t dt) {
-        return AccelGyroPredict(dt, cur_state.last_pred, cur_state);
+InsStatus Eskf::applyAccelGyroPredict(uint64_t dt) {
+        return applyAccelGyroPredict(dt, cur_state.last_pred, cur_state);
 };
 
-InsStatus Eskf::AccelGyroPredict(uint64_t dt, const AGInternalSample& ag_sample) {
-        return AccelGyroPredict(dt, ag_sample, cur_state);
+InsStatus Eskf::applyAccelGyroPredict(uint64_t dt, const AGInternalSample& ag_sample) {
+        return applyAccelGyroPredict(dt, ag_sample, cur_state);
 };
 
-InsStatus Eskf::AccelGyroPredict(
+InsStatus Eskf::applyAccelGyroPredict(
         uint64_t dt,
         const AGInternalSample& ag_sample, 
         FullState& prev_state

@@ -31,22 +31,28 @@ class Eskf
 
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
     
+
+
+    // generic method to handle any measuremnt type
+    InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state);
+
+
     // methods defined in eskf_prediction.cpp
 
-    InsStatus Eskf::AccelGyroPredict(
+    InsStatus Eskf::applyAccelGyroPredict(
         uint64_t dt,
         const AGInternalSample& ag_sample, 
         FullState& prev_state
     );
 
     // overloaded - Used when updating the current state
-    InsStatus Eskf::AccelGyroPredict(
+    InsStatus Eskf::applyAccelGyroPredict(
         uint64_t dt,
         const AGInternalSample& ag_sample
     );
 
     // overloaded - Used when propagating to a given timestamp before correction
-    InsStatus Eskf::AccelGyroPredict(uint64_t dt);
+    InsStatus Eskf::applyAccelGyroPredict(uint64_t dt);
 
 
     // methods defined in eskf_correction.cpp
@@ -84,9 +90,9 @@ class Eskf
     );
 
     // utility eskf methods 
-    Eigen::Quaternionf Eskf::RotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
+    Eigen::Quaternionf Eskf::rotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
 
-    void Eskf::CorrectionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns);
+    void Eskf::correctionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns);
 };
 
 }

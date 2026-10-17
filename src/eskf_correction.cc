@@ -47,7 +47,7 @@ InsStatus Eskf::applyMagCorrection(
         
         // Propagate the current state to the most recent timestamp using the most recent prediction.
         if (dt != 0) {
-            InsStatus propagation_status = AccelGyroPredict(dt, prev_state.last_pred, prev_state);
+            InsStatus propagation_status = applyAccelGyroPredict(dt, prev_state.last_pred, prev_state);
             if (propagation_status != InsStatus::ok) return propagation_status;
         }
 
@@ -142,7 +142,7 @@ InsStatus Eskf::applyGnssCorrection(
         
         // Propagate the current state to the most recent timestamp using the most recent prediction.
         if (dt != 0) {
-            InsStatus propagation_status = AccelGyroPredict(dt, prev_state.last_pred, prev_state);
+            InsStatus propagation_status = applyAccelGyroPredict(dt, prev_state.last_pred, prev_state);
             if (propagation_status != InsStatus::ok) return propagation_status;
         }
 
@@ -228,7 +228,7 @@ InsStatus Eskf::applyBaroCorrection(
         
         // Propagate the current state to the most recent timestamp using the most recent prediction.
         if (dt != 0) {
-            InsStatus propagation_status = AccelGyroPredict(dt, prev_state.last_pred, prev_state);
+            InsStatus propagation_status = applyAccelGyroPredict(dt, prev_state.last_pred, prev_state);
             if (propagation_status != InsStatus::ok) return propagation_status;
         }
 

@@ -43,6 +43,6 @@ InsStatus DelayedStateFR::insertMeasurement(const Measurement& new_measurement) 
     int16_t cur_mea_index = StateBuffer[cur_state_index].measurement_index;
 
     // propagate measurements
-
+    
 }
 }

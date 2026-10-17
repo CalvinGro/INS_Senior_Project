@@ -13,9 +13,44 @@ Description - This file defines the supporting methods for the prediction and
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#include <variant>
+
 namespace ins {
 
-Eigen::Quaternionf Eskf::RotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector) {
+// Overloaded is used for applying the correct lambda to each type of measurement in Measurement
+template<typename... MeaLambda>
+struct Overloaded : MeaLambda... {
+    using MeaLambda::operator()...;
+};
+
+// tells the compiler how to use the template args
+template<typename... MeaLambda>
+Overloaded(MeaLambda...) -> Overloaded<MeaLambda...>;
+
+
+InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state) {
+    uint64_t dt = new_measurement.timestamp - prev_state.last_timestamp;
+
+    return std::visit(
+        Overloaded{
+            [this, &prev_state, dt](const AGInternalSample& ag_sample) {
+                return applyAccelGyroPredict(dt, ag_sample, prev_state);
+            },
+            [this, &prev_state, dt](const GnssInternalSample& gnss_sample) {
+                return applyGnssCorrection(dt, gnss_sample, prev_state);
+            },
+            [this, &prev_state, dt](const MagInternalSample& mag_sample) {
+                return applyMagCorrection(dt, mag_sample, prev_state);
+            },
+            [this, &prev_state, dt](const BaroInternalSample& baro_sample) {
+                return applyBaroCorrection(dt, baro_sample, prev_state);
+            }
+        }, new_measurement.data
+    );
+}
+
+
+Eigen::Quaternionf Eskf::rotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector) {
 
     const float angle = rotation_vector.norm();
 
@@ -27,11 +62,11 @@ Eigen::Quaternionf Eskf::RotationVectorToQuaternion(const Eigen::Vector3f& rotat
 
 // Method to inject the observed/calculated error-state into the nominal-state after
 // receiving a measurement.
-void Eskf::CorrectionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns) {
+void Eskf::correctionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns) {
     ns.position += es.segment<3>(0);
     ns.velocity += es.segment<3>(3);
     // angular_position calculation assumes the orientation correction is a rotation vector
-    ns.angular_position = (RotationVectorToQuaternion(es.segment<3>(6)) * ns.angular_position).normalized(); 
+    ns.angular_position = (rotationVectorToQuaternion(es.segment<3>(6)) * ns.angular_position).normalized(); 
     ns.accel_bias += es.segment<3>(9);
     ns.gyro_bias += es.segment<3>(12);
     ns.baro_bias += es[15];
