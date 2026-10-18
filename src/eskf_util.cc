@@ -30,6 +30,7 @@ Overloaded(MeaLambda...) -> Overloaded<MeaLambda...>;
 
 InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state) {
     uint64_t dt = new_measurement.timestamp - prev_state.last_timestamp;
+    prev_state.last_timestamp = new_measurement.timestamp;
 
     return std::visit(
         Overloaded{

@@ -31,7 +31,7 @@ public:
     DelayedStateFR(Eskf& eskf)
         : eskf_(eskf) {}
 
-    InsStatus insertMeasurement(const Measurement& new_measurement);
+    InsStatus insertDelayedMeasurement(const Measurement& new_measurement);
 
     DelayStatus checkIfDelayed(const uint64_t timestamp);
 
@@ -45,13 +45,13 @@ private:
 
     struct StateCheckpoint {
         FullState saved_state;
-        int16_t measurement_index;
+        int16_t measurement_index = -1;
     };
 
     struct MeasurementNode {
         Measurement measurement;
-        int16_t next_measurement_index;
-        int16_t state_index;
+        int16_t next_measurement_index = -1;
+        int16_t state_index = -1;
     };
 
 
@@ -80,7 +80,7 @@ private:
 
     // Methods for handling free-list
     InsStatus acquireMeasurementIndex(int16_t acquired_index);
-    InsStatus releaseMeasurementIndex(const int16_t index);
+    InsStatus releaseMeasurementIndex(const int16_t released_index);
 
 
     // utility methods for filter recalculation
@@ -88,7 +88,11 @@ private:
 
     InsStatus findRecalcCheckpoint(const uint64_t timestamp, int16_t found_state_index);
 
+    InsStatus nextMeasurement(int16_t& cur_mea_index);
 
+    InsStatus removeLastState(void);
+
+    InsStatus insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement);
 };
 
 }

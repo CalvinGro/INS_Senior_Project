@@ -21,20 +21,21 @@ namespace ins {
 
 class Eskf
 {
+public:
+
     // the most recent state info
     FullState cur_state;
 
+    // generic method to apply any measuremnt type
+    InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state);
+
+private:
     // constants that are preconfigured or set during init before initializing the Eskf
     ConfVarGrowthRates conf_state_vgr;
     MeasurementVars conf_mea_vars;
     MagnetometerCalibration conf_mag_cal;
 
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
-    
-
-
-    // generic method to handle any measuremnt type
-    InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state);
 
 
     // methods defined in eskf_prediction.cpp

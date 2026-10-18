@@ -88,7 +88,11 @@ namespace ins {
 
         // delayed state FR errors
         recorded_states_uninit,
-        bi_search_failed_in_findRecalcCheckpoint
+        bi_search_failed_in_findRecalcCheckpoint,
+        indexed_past_last_measurement,
+        invalid_state_index_removeLastState,
+        unlinked_state_removeLastState,
+        bi_search_found_wrong_state
     };
 
     enum class DelayStatus {
