@@ -102,6 +102,23 @@ uint64_t DelayedStateFR::getStateTime(int16_t state_index) {
     return MeasurementList[StateBuffer[state_index].measurement_index].measurement.timestamp;
 };
 
+// Method for safely adding a new state/checkpoint
+InsStatus DelayedStateFR::addNewState(const FullState& new_state) {
+
+    // check if StateBuffer is full, if so rmLastState
+    if (recorded_states_ == state_capacity_) {
+        InsStatus rm_status = removeLastState();
+        if (rm_status != InsStatus::ok) return rm_status;
+    }
+
+    int16_t newest_state_ = (newest_state_ + 1) % state_capacity_;
+    recorded_states_++;
+    
+    StateBuffer[newest_state_].saved_state = new_state;
+    StateBuffer[newest_state_].measurement_index = -1;
+    
+    return InsStatus::ok;
+};
 
 // Method to remove the oldest state and all the measurements dependent on it.
 InsStatus DelayedStateFR::removeLastState(void) {
@@ -129,7 +146,7 @@ InsStatus DelayedStateFR::removeLastState(void) {
 
     // remove the last (oldest) state once the measurements are removed.
     StateBuffer[oldest_state_].measurement_index = -1;
-    oldest_state_ = oldest_state_ + 1 % state_capacity_;
+    oldest_state_ = (oldest_state_ + 1) % state_capacity_;
     recorded_states_--;
 
     return InsStatus::ok;

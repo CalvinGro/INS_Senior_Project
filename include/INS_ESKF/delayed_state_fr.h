@@ -31,11 +31,12 @@ public:
     DelayedStateFR(Eskf& eskf)
         : eskf_(eskf) {}
 
-    InsStatus insertDelayedMeasurement(const Measurement& new_measurement);
-
     DelayStatus checkIfDelayed(const uint64_t timestamp);
 
-    
+    InsStatus appendOnTimeMeasurement(const Measurement& new_measurment);
+
+    InsStatus insertDelayedMeasurement(const Measurement& new_measurement);
+
 private:
     const static uint64_t sample_capacity_ = SAMPLE_CAP;
     const static uint64_t state_capacity_ = sample_capacity_ / SAMPLES_PER_STATE;
@@ -82,6 +83,9 @@ private:
     InsStatus acquireMeasurementIndex(int16_t acquired_index);
     InsStatus releaseMeasurementIndex(const int16_t released_index);
 
+    // Methods for handling state circular buffer
+    InsStatus DelayedStateFR::addNewState(const FullState& new_state);
+    InsStatus removeLastState(void);
 
     // utility methods for filter recalculation
     uint64_t getStateTime(const int16_t state_index);
@@ -89,8 +93,6 @@ private:
     InsStatus findRecalcCheckpoint(const uint64_t timestamp, int16_t found_state_index);
 
     InsStatus nextMeasurement(int16_t& cur_mea_index);
-
-    InsStatus removeLastState(void);
 
     InsStatus insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement);
 };

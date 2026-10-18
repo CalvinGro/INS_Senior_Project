@@ -92,7 +92,8 @@ namespace ins {
         indexed_past_last_measurement,
         invalid_state_index_removeLastState,
         unlinked_state_removeLastState,
-        bi_search_found_wrong_state
+        bi_search_found_wrong_state,
+        failed_to_add_first_state
     };
 
     enum class DelayStatus {
