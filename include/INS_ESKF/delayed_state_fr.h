@@ -33,9 +33,9 @@ public:
 
     DelayStatus checkIfDelayed(const uint64_t timestamp);
 
-    InsStatus appendOnTimeMeasurement(const Measurement& new_measurment);
+    InsStatus appendOnTimeMeasurement(const InternalMeasurement& new_measurment);
 
-    InsStatus insertDelayedMeasurement(const Measurement& new_measurement);
+    InsStatus insertDelayedMeasurement(const InternalMeasurement& new_measurement);
 
 private:
     const static uint64_t sample_capacity_ = SAMPLE_CAP;
@@ -50,7 +50,7 @@ private:
     };
 
     struct MeasurementNode {
-        Measurement measurement;
+        InternalMeasurement measurement;
         int16_t next_measurement_index = -1;
         int16_t state_index = -1;
     };
@@ -94,7 +94,7 @@ private:
 
     InsStatus nextMeasurement(int16_t& cur_mea_index);
 
-    InsStatus insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement);
+    InsStatus insertMeasurementAfter(const int16_t parent_measurement_i, const InternalMeasurement& new_measurement);
 };
 
 }

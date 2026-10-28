@@ -17,6 +17,10 @@ Description - This file defines the supporting methods for the prediction and
 
 namespace ins {
 
+InsStatus Eskf::applyMeasurement(const InternalMeasurement& new_measurement) {
+    return applyMeasurement(new_measurement, cur_state);
+};
+
 // Overloaded is used for applying the correct lambda to each type of measurement in Measurement
 template<typename... MeaLambda>
 struct Overloaded : MeaLambda... {
@@ -27,12 +31,11 @@ struct Overloaded : MeaLambda... {
 template<typename... MeaLambda>
 Overloaded(MeaLambda...) -> Overloaded<MeaLambda...>;
 
-
-InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state) {
+InsStatus Eskf::applyMeasurement(const InternalMeasurement& new_measurement, FullState& prev_state) {
+    if (prev_state.last_timestamp > new_measurement.timestamp) return InsStatus::timestamps_out_of_order_applyMeasurement;
     uint64_t dt = new_measurement.timestamp - prev_state.last_timestamp;
-    prev_state.last_timestamp = new_measurement.timestamp;
 
-    return std::visit(
+    InsStatus apply_status = std::visit(
         Overloaded{
             [this, &prev_state, dt](const AGInternalSample& ag_sample) {
                 return applyAccelGyroPredict(dt, ag_sample, prev_state);
@@ -48,7 +51,12 @@ InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_s
             }
         }, new_measurement.data
     );
-}
+
+    if (apply_status == InsStatus::ok) {
+        prev_state.last_timestamp = new_measurement.timestamp;
+    }
+    return apply_status;
+};
 
 
 Eigen::Quaternionf Eskf::rotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector) {

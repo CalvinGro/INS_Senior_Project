@@ -4,12 +4,13 @@ Start Date  - 9/27/26
 Title       - Integrated Navigation System
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This is the header file that declares the user facing methods and 
-            interacts with both the delayed_state_buffer and eskf.
+            interacts with both the delayed_state_fr and eskf. It allows access
+            to all ins versions.
 */
 
 #pragma once
 
-#include "delayed_state_buffer.h"
+#include "delayed_state_fr.h"
 #include "eskf.h" 
 #include "ins_types.h"
 
@@ -23,13 +24,14 @@ class Ins
 {
 public:
 
-    // methods defined in eskf.cpp
-    bool initEskf(void);
+    bool initSimV1Ins(void);
 
-    bool applyMeasurement(const Measurement& new_measurement);
+    bool applySimV1Measurement(const InternalMeasurement& new_measurement);
 
     bool getCurrentState(NStateVec& nominal_state);
 
+
+private:
     bool applyGeodeticGNSSCorrection();
 
     bool applyECEFGNSSCorrection();

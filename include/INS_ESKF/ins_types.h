@@ -41,13 +41,36 @@ namespace ins {
         float z_pos;
     };
 
-    struct Measurement {
+    struct InternalMeasurement {
         std::variant<
             AGInternalSample,
             MagInternalSample,
             GnssInternalSample,
             BaroInternalSample
         > data;
+        uint64_t timestamp;
+    };
+
+    // Definitions of External Measurement Types
+    struct AGExternalV1Sample {
+        float accel_x, accel_y, accel_z;
+        float ang_vel_x, ang_vel_y, ang_vel_z;
+        uint64_t timestamp;
+    };
+
+    struct MagExternalV1Sample {
+        float ang_pos_x, ang_pos_y, ang_pos_z;
+        uint64_t timestamp;
+    };
+
+    struct GnssExternalV1Sample {
+        float pos_x, pos_y, pos_z;
+        float gnss_var_x, gnss_var_y, gnss_var_z;
+        uint64_t timestamp;
+    };
+
+    struct BaroExternalV1Sample {
+        float z_pos;
         uint64_t timestamp;
     };
 
@@ -81,6 +104,9 @@ namespace ins {
         ns_quaternion_not_unit_legth_m,
         sample_not_finite_m,
 
+        // apply measurment errors
+        timestamps_out_of_order_applyMeasurement,
+
         // free-list errors
         all_nodes_full,
         attempted_to_acquire_invalid_index,
@@ -93,7 +119,11 @@ namespace ins {
         invalid_state_index_removeLastState,
         unlinked_state_removeLastState,
         bi_search_found_wrong_state,
-        failed_to_add_first_state
+        failed_to_add_first_state,
+        measurement_out_of_fr_range,
+
+        // error overflow
+        loe_overflow
     };
 
     enum class DelayStatus {

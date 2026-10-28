@@ -27,7 +27,9 @@ public:
     FullState cur_state;
 
     // generic method to apply any measuremnt type
-    InsStatus Eskf::applyMeasurement(Measurement& new_measurement, FullState& prev_state);
+    InsStatus applyMeasurement(const InternalMeasurement& new_measurement);
+    
+    InsStatus applyMeasurement(const InternalMeasurement& new_measurement, FullState& prev_state);
 
 private:
     // constants that are preconfigured or set during init before initializing the Eskf
@@ -40,25 +42,25 @@ private:
 
     // methods defined in eskf_prediction.cpp
 
-    InsStatus Eskf::applyAccelGyroPredict(
+    InsStatus applyAccelGyroPredict(
         uint64_t dt,
         const AGInternalSample& ag_sample, 
         FullState& prev_state
     );
 
     // overloaded - Used when updating the current state
-    InsStatus Eskf::applyAccelGyroPredict(
+    InsStatus applyAccelGyroPredict(
         uint64_t dt,
         const AGInternalSample& ag_sample
     );
 
     // overloaded - Used when propagating to a given timestamp before correction
-    InsStatus Eskf::applyAccelGyroPredict(uint64_t dt);
+    InsStatus applyAccelGyroPredict(uint64_t dt);
 
 
     // methods defined in eskf_correction.cpp
 
-    InsStatus Eskf::applyMagCorrection(
+    InsStatus applyMagCorrection(
         uint64_t dt,
         const MagInternalSample& mag_sample,
         FullState& prev_state
@@ -72,28 +74,28 @@ private:
     );
 
     // overloaded - Used when correcting the current state with a gnss sample
-    InsStatus Eskf::applyGnssCorrection(
+    InsStatus applyGnssCorrection(
         uint64_t dt,
         const GnssInternalSample& gnss_sample
     );
 
 
-    InsStatus Eskf::applyBaroCorrection(
+    InsStatus applyBaroCorrection(
         uint64_t dt,
         const BaroInternalSample& baro_sample,
         FullState& prev_state
     );
 
     // overloaded - Used when correcting the current state with a barometer sample
-    InsStatus Eskf::applyBaroCorrection(
+    InsStatus applyBaroCorrection(
         uint64_t dt,
         const BaroInternalSample& baro_sample
     );
 
     // utility eskf methods 
-    Eigen::Quaternionf Eskf::rotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
+    Eigen::Quaternionf rotationVectorToQuaternion(const Eigen::Vector3f& rotation_vector);
 
-    void Eskf::correctionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns);
+    void correctionInjection(const Eigen::Vector<float,16>& es, NStateVec& ns);
 };
 
 }

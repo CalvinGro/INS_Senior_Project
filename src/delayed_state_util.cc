@@ -153,7 +153,7 @@ InsStatus DelayedStateFR::removeLastState(void) {
 };
 
 // Method to insert a delayed measurement into the MeasurementList
-InsStatus DelayedStateFR::insertMeasurementAfter(const int16_t parent_measurement_i, const Measurement& new_measurement) {
+InsStatus DelayedStateFR::insertMeasurementAfter(const int16_t parent_measurement_i, const InternalMeasurement& new_measurement) {
   
     int16_t new_index;
     InsStatus acquire_status = acquireMeasurementIndex(new_index);

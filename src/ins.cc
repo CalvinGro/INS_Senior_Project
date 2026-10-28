@@ -20,7 +20,7 @@ bool Eskf::initEskf(void) {
 
 };
 
-bool Ins::applyMeasurement(const Measurement& new_measurement) {
+bool Ins::applyMeasurement(const InternalMeasurement& new_measurement) {
     DelayedStateBuffer::DelayStatus status = ds_buffer.checkIfDelayed(new_measurement.timestamp);
 
     // Standard, non-delayed measurement handling.

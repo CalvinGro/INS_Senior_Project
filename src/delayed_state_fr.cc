@@ -37,7 +37,7 @@ DelayStatus DelayedStateFR::checkIfDelayed(uint64_t timestamp) {
 // method to update the FR with the current measurement. It should be called before 
 // propagating the state, so that it saves the state before propagation for the measurements
 // linked to a checkpoint (state).
-InsStatus DelayedStateFR::appendOnTimeMeasurement(const Measurement& new_measurment) {
+InsStatus DelayedStateFR::appendOnTimeMeasurement(const InternalMeasurement& new_measurment) {
 
     // if first measurement and state (assuming the cur_state is configured from init and has not been propagated)
     if (recorded_states_ == 0) {
@@ -61,7 +61,7 @@ InsStatus DelayedStateFR::appendOnTimeMeasurement(const Measurement& new_measurm
 
 
 
-InsStatus DelayedStateFR::insertDelayedMeasurement(const Measurement& new_measurement) {
+InsStatus DelayedStateFR::insertDelayedMeasurement(const InternalMeasurement& new_measurement) {
 
     // get the first state index to start from
     int16_t cur_state_index = 0;
