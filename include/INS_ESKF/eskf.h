@@ -31,12 +31,15 @@ public:
     
     InsStatus applyMeasurement(const InternalMeasurement& new_measurement, FullState& prev_state);
 
-private:
-    // constants that are preconfigured or set during init before initializing the Eskf
-    ConfVarGrowthRates conf_state_vgr;
-    MeasurementVars conf_mea_vars;
-    MagnetometerCalibration conf_mag_cal;
 
+    // constants that are preconfigured or set during init before initializing the Eskf
+    MagConfiguration conf_mag;
+    AccelConfiguration conf_accel;
+    GyroConfiguration conf_gyro;
+    GnssConfiguration conf_gnss;
+    BaroConfiguration conf_baro;
+    
+private:
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};
 
 

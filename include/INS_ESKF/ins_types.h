@@ -51,6 +51,7 @@ namespace ins {
         uint64_t timestamp;
     };
 
+
     // Definitions of External Measurement Types
     struct AGExternalV1Sample {
         float accel_x, accel_y, accel_z;
@@ -154,25 +155,47 @@ namespace ins {
     };
 
 
-    // Constants that are preconfigured or set at init.
-    // Grouped into: State Variance Growth Rates, Measurement Variances, and Magnetometer Calibration
-    struct ConfVarGrowthRates {
-        Eigen::Vector3f velocity_vgr = Eigen::Vector3f::Zero();
-        Eigen::Vector3f orientation_vgr = Eigen::Vector3f::Zero();
-        Eigen::Vector3f accel_bias_vgr = Eigen::Vector3f::Zero();
-        Eigen::Vector3f gyro_bias_vgr = Eigen::Vector3f::Zero();
-        float baro_bias_vgr = 0.0f;
-    };
-
-    struct MeasurementVars {
-        Eigen::Vector3f magnetometer_var = Eigen::Vector3f::Zero();
-        float baro_var;
-    };
-
-    struct MagnetometerCalibration {
+    struct MagConfiguration {
         Eigen::Vector3f offset = Eigen::Vector3f::Zero();
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f mag_field_enu = Eigen::Vector3f::Zero();
+        Eigen::Matrix3f bf_covar = Eigen::Matrix3f::Identity();
+        Eigen::Vector3f mag_field_enu = Eigen::Vector3f::Zero();
+    };
+
+    struct AccelConfiguration {
+        Eigen::Vector3f offset = Eigen::Vector3f::Zero();
+        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bf_covar = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bias_bf_covar = Eigen::Matrix3f::Identity();
+    };
+
+    struct GyroConfiguration {
+        Eigen::Vector3f offset = Eigen::Vector3f::Zero();
+        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bf_covar = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bias_bf_covar = Eigen::Matrix3f::Identity();
+    };
+
+    struct BaroConfiguration {
+        float var = 0;
+        float bias_var = 0;
+    };
+
+    struct GnssConfiguration {
+        Eigen::Vector3f antenna_lever_arm = Eigen::Vector3f::Zero();
+        Eigen::Matrix3f default_covar = Eigen::Matrix3f::Identity();
+    };
+
+    struct SimV1Configuration {
+        float accel_vgr_x, accel_vgr_y, accel_vgr_z;
+        float gyro_vgr_x, gyro_vgr_y, gyro_vgr_z;
+        float mag_vgr_x, mag_vgr_y, mag_vgr_z;
+        float baro_vgr_z;
+        float accel_bias_vgr_x, accel_bias_vgr_y, accel_bias_vgr_z;
+        float gyro_bias_vgr_x, gyro_bias_vgr_y, gyro_bias_vgr_z;
+        float baro_bias_bgr_z;
     };
 }

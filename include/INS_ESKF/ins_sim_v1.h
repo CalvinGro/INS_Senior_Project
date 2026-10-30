@@ -35,7 +35,7 @@ class InsSimV1
 
 public:
 
-    InsStatus initSimV1Ins(void);
+    InsStatus initSimV1Ins(SimV1Configuration* config);
 
     InsStatus getCurrentState(NStateVec& nominal_state);
 

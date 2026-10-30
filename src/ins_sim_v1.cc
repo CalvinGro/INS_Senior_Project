@@ -20,9 +20,26 @@ Description - This file defines the interface to apply abstracted measurements o
 
 namespace ins {
 
-InsStatus InsSimV1::initSimV1Ins(void) {
+InsStatus InsSimV1::initSimV1Ins(SimV1Configuration* config) {
     // don't have to track any initial reference frame relative to 
-    // magnetic north, mean sea-level, or ECEF. I assume everything starts at 0.
+    // magnetic north, mean sea-level, or ECEF. I assume everything starts at 0.3
+
+    // sensor frame covariance vectors
+    Eigen::Vector3f accel_covar = {config->accel_vgr_x, config->accel_vgr_y, config->accel_vgr_z};
+    Eigen::Vector3f gyro_covar = {config->gyro_vgr_x, config->gyro_vgr_y, config->gyro_vgr_z};
+    Eigen::Vector3f mag_covar = {config->mag_vgr_x, config->mag_vgr_y, config->mag_vgr_z};
+    Eigen::Vector3f accel_bias_covar = {config->accel_bias_vgr_x, config->accel_bias_vgr_y, config->accel_bias_vgr_z};
+    Eigen::Vector3f gyro_bias_covar = {config->gyro_bias_vgr_x, config->gyro_bias_vgr_y, config->gyro_bias_vgr_z};
+
+    // apply sensor frame -> body frame transformation to covariance matrices and insert them into the eskf
+    eskf.conf_accel.bf_covar = eskf.conf_accel.sensor_to_body * accel_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
+    eskf.conf_gyro.bf_covar = eskf.conf_gyro.sensor_to_body * gyro_covar.asDiagonal() * eskf.conf_gyro.sensor_to_body.transpose();
+    eskf.conf_mag.bf_covar = eskf.conf_mag.sensor_to_body * mag_covar.asDiagonal() * eskf.conf_mag.sensor_to_body.transpose();
+    eskf.conf_baro.var = config->baro_vgr_z;
+
+    eskf.conf_accel.bias_bf_covar = eskf.conf_accel.sensor_to_body * accel_bias_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
+    eskf.conf_gyro.bias_bf_covar = eskf.conf_accel.sensor_to_body * gyro_bias_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
+    eskf.conf_baro.bias_var = config->baro_bias_bgr_z;
 };
 
 InsStatus InsSimV1::getCurrentState(NStateVec& nominal_state) {
