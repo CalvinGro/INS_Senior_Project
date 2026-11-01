@@ -49,7 +49,7 @@ InsStatus DelayedStateFR::releaseMeasurementIndex(int16_t released_index) {
 
 
 InsStatus DelayedStateFR::nextMeasurement(int16_t& cur_mea_index) {
-    int16_t cur_mea_index = MeasurementList[cur_mea_index].next_measurement_index;
+    cur_mea_index = MeasurementList[cur_mea_index].next_measurement_index;
     if (cur_mea_index == -1) return InsStatus::indexed_past_last_measurement;
 
     return InsStatus::ok;

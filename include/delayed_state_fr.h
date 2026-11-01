@@ -27,17 +27,7 @@ namespace ins {
 
 class DelayedStateFR
 {
-public:
-    DelayedStateFR(Eskf& eskf)
-        : eskf_(eskf) {}
 
-    DelayStatus checkIfDelayed(const uint64_t timestamp);
-
-    InsStatus appendOnTimeMeasurement(const InternalMeasurement& new_measurment);
-
-    InsStatus insertDelayedMeasurement(const InternalMeasurement& new_measurement);
-
-private:
     const static uint64_t sample_capacity_ = SAMPLE_CAP;
     const static uint64_t state_capacity_ = sample_capacity_ / SAMPLES_PER_STATE;
 
@@ -79,12 +69,23 @@ private:
 
     int16_t free_list_index_ = sample_capacity_ - 1;
 
+public:
+    DelayedStateFR(Eskf& eskf)
+        : eskf_(eskf) {}
+
+    DelayStatus checkIfDelayed(const uint64_t timestamp);
+
+    InsStatus appendOnTimeMeasurement(const InternalMeasurement& new_measurment);
+
+    InsStatus insertDelayedMeasurement(const InternalMeasurement& new_measurement);
+
+private:
     // Methods for handling free-list
     InsStatus acquireMeasurementIndex(int16_t acquired_index);
     InsStatus releaseMeasurementIndex(const int16_t released_index);
 
     // Methods for handling state circular buffer
-    InsStatus DelayedStateFR::addNewState(const FullState& new_state);
+    InsStatus addNewState(const FullState& new_state);
     InsStatus removeLastState(void);
 
     // utility methods for filter recalculation

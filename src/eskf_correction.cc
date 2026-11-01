@@ -61,7 +61,7 @@ InsStatus Eskf::applyMagCorrection(
         Eigen::Vector3f innovation =  mag_sample.mag_field_body - predicted_mag_field;
 
         // The Measurement Noise Covariance (V), built from the passed in uncertainties
-        Eigen::Matrix3f V = conf_mag.bf_covar.asDiagonal();
+        Eigen::Matrix3f V = conf_mag.bf_covar;
 
         // The Measurement Jacobian (H), translates orientation error into measurement error (linearization)
         Eigen::Matrix<float,3,16> H = Eigen::Matrix<float,3,16>::Zero();

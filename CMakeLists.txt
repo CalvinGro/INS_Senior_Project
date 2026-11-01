@@ -3,12 +3,29 @@ cmake_minimum_required(VERSION 3.24)
 project(INS LANGUAGES CXX)
 
 add_library(eskf STATIC
-    "src/eskf.cpp"
+    "src/eskf_correction.cc"
+    "src/eskf_prediction.cc"
+    "src/eskf_util.cc"
+    "src/delayed_state_fr.cc"
+    "src/delayed_state_util.cc"
+
+    "src/ins_sim_v1.cc"
 )
+
 
 target_compile_features(eskf PUBLIC cxx_std_20)
 
 set_target_properties(eskf PROPERTIES
+    CXX_EXTENSIONS OFF
+)
+
+add_executable(sim_noise_maker
+    "tools/sim_noise_maker.cc"
+)
+
+target_link_libraries(sim_noise_maker PRIVATE eskf)
+
+set_target_properties(sim_noise_maker PROPERTIES
     CXX_EXTENSIONS OFF
 )
 

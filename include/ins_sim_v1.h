@@ -35,7 +35,7 @@ class InsSimV1
 
 public:
 
-    InsStatus initSimV1Ins(SimV1Configuration* config);
+    void initSimV1Ins(SimV1Configuration* config);
 
     InsStatus getCurrentState(NStateVec& nominal_state);
 
@@ -45,8 +45,8 @@ public:
     void receiveV1Gnss(const GnssExternalV1Sample& ex_gnss_sample);
 
 private:
-    void InsSimV1::processV1Measurement(const InternalMeasurement& measurement);
+    void processV1Measurement(const InternalMeasurement& measurement);
 
-    void InsSimV1::appendError(const InsStatus error);
+    void appendError(const InsStatus error);
 };
 }

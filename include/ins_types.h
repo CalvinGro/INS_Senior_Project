@@ -167,21 +167,21 @@ namespace ins {
         Eigen::Vector3f offset = Eigen::Vector3f::Zero();
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bf_covar = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bias_bf_covar = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bf_vgr = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bias_bf_vgr = Eigen::Matrix3f::Identity();
     };
 
     struct GyroConfiguration {
         Eigen::Vector3f offset = Eigen::Vector3f::Zero();
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bf_covar = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bias_bf_covar = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bf_vgr = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f bias_bf_vgr = Eigen::Matrix3f::Identity();
     };
 
     struct BaroConfiguration {
         float var = 0;
-        float bias_var = 0;
+        float bias_vgr = 0;
     };
 
     struct GnssConfiguration {
@@ -189,13 +189,15 @@ namespace ins {
         Eigen::Matrix3f default_covar = Eigen::Matrix3f::Identity();
     };
 
+    // this is in sensor frame
     struct SimV1Configuration {
         float accel_vgr_x, accel_vgr_y, accel_vgr_z;
         float gyro_vgr_x, gyro_vgr_y, gyro_vgr_z;
-        float mag_vgr_x, mag_vgr_y, mag_vgr_z;
-        float baro_vgr_z;
+        float mag_var_x, mag_var_y, mag_var_z;
+        float baro_var_z;
         float accel_bias_vgr_x, accel_bias_vgr_y, accel_bias_vgr_z;
         float gyro_bias_vgr_x, gyro_bias_vgr_y, gyro_bias_vgr_z;
-        float baro_bias_bgr_z;
+        float baro_bias_vgr_z;
+        float gnss_default_var_x, gnss_default_var_y, gnss_default_var_z;
     };
 }
