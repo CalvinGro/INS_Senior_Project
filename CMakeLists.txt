@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(INS LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
+# full Ins target
 add_library(eskf STATIC
     "src/eskf_correction.cc"
     "src/eskf_prediction.cc"
@@ -12,22 +16,22 @@ add_library(eskf STATIC
     "src/ins_sim_v1.cc"
 )
 
-
 target_compile_features(eskf PUBLIC cxx_std_20)
 
-set_target_properties(eskf PROPERTIES
-    CXX_EXTENSIONS OFF
-)
 
+# simulation measurement csv noise adder
 add_executable(sim_noise_maker
     "tools/sim_noise_maker.cc"
 )
-
 target_link_libraries(sim_noise_maker PRIVATE eskf)
 
-set_target_properties(sim_noise_maker PROPERTIES
-    CXX_EXTENSIONS OFF
+
+# simulation version 1
+add_executable(simulation_v1
+    "simulations/sim_v1.cc"
 )
+target_link_libraries(simulation_v1 PRIVATE eskf)
+
 
 # Eigen 5 dependency configuration 
 include(FetchContent)

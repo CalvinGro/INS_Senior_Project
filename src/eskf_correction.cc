@@ -7,7 +7,6 @@ Description - This file defines the methods to correct the state vector and cova
             matrix based on gnss, magnetometer, or barometer measurements.
 */
 
-
 #include "ins_types.h"
 #include "eskf.h"
 

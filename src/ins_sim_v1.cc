@@ -1,7 +1,7 @@
 /*
 Author      - Calvin Gross
 Start Date  - 10/23/26
-Title       - Ins Simulation version 1
+Title       - Ins Interface for Simulation Version 1
 Project     - Integrated Navigation System (GNSS + IMU) -- Senior Project --
 Description - This file defines the interface to apply abstracted measurements of
             simple states without any sensor nuance to the Eskf. It provides a 
@@ -20,7 +20,7 @@ Description - This file defines the interface to apply abstracted measurements o
 
 namespace ins {
 
-void InsSimV1::initSimV1Ins(SimV1Configuration* config) {
+InsSimV1::InsSimV1(SimV1Configuration* config) {
     // don't have to track any initial reference frame relative to 
     // magnetic north, mean sea-level, or ECEF. I assume everything starts at 0.3
 

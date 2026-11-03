@@ -7,8 +7,6 @@ Description - This file defines the methods to predict/update the state vector a
             covariance matrix based on accelerometer or gyroscope measurements.
 */
 
-
-
 #include "ins_types.h"
 #include "eskf.h"
 

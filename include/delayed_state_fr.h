@@ -81,7 +81,7 @@ public:
 
 private:
     // Methods for handling free-list
-    InsStatus acquireMeasurementIndex(int16_t acquired_index);
+    InsStatus acquireMeasurementIndex(int16_t& acquired_index);
     InsStatus releaseMeasurementIndex(const int16_t released_index);
 
     // Methods for handling state circular buffer

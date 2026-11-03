@@ -30,12 +30,12 @@ class InsSimV1
     Eskf eskf = Eskf();
     DelayedStateFR delayed_fr = DelayedStateFR(eskf);
 
+public:
     InsStatus list_of_errors[LIST_OF_ERRORS_SIZE];
     uint16_t loe_i = 0;
 
-public:
 
-    void initSimV1Ins(SimV1Configuration* config);
+    InsSimV1(SimV1Configuration* config);
 
     InsStatus getCurrentState(NStateVec& nominal_state);
 

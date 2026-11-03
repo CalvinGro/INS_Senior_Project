@@ -32,42 +32,7 @@ struct csv_processing_state {
 
 
 // default vgr configurations (chatgpt gathered example values from datasheets)
-ins::SimV1Configuration config{
-    // Accelerometer white-noise intensity: m^2/s^3
-    .accel_vgr_x = 3.08e-7f,
-    .accel_vgr_y = 3.08e-7f,
-    .accel_vgr_z = 3.08e-7f,
-
-    // Gyroscope white-noise intensity: rad^2/s
-    .gyro_vgr_x = 2.44e-9f,
-    .gyro_vgr_y = 2.44e-9f,
-    .gyro_vgr_z = 2.44e-9f,
-
-    // Magnetometer sample variance: uT^2
-    .mag_var_x = 0.1024f,
-    .mag_var_y = 0.1024f,
-    .mag_var_z = 0.1681f,
-
-    // Barometer altitude sample variance: m^2
-    .baro_var_z = 0.0367f,
-
-    // Assumed accelerometer bias random walk: m^2/s^5
-    .accel_bias_vgr_x = 1.0e-6f,
-    .accel_bias_vgr_y = 1.0e-6f,
-    .accel_bias_vgr_z = 1.0e-6f,
-
-    // Assumed gyroscope bias random walk: rad^2/s^3
-    .gyro_bias_vgr_x = 1.0e-8f,
-    .gyro_bias_vgr_y = 1.0e-8f,
-    .gyro_bias_vgr_z = 1.0e-8f,
-
-    // Assumed barometer bias random walk: m^2/s
-    .baro_bias_vgr_z = 1.0e-4f,
-
-    .gnss_default_var_x = 4.5084,
-    .gnss_default_var_y = 4.5084,
-    .gnss_default_var_z = 18.0337
-};
+ins::SimV1Configuration config = ins::default_config;
 
 // seed for random numbers
 std::mt19937 generator(37);

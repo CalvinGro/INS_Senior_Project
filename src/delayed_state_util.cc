@@ -16,7 +16,7 @@ namespace ins {
 
 
 // Free-List Methods
-InsStatus DelayedStateFR::acquireMeasurementIndex(int16_t acquired_index) {    
+InsStatus DelayedStateFR::acquireMeasurementIndex(int16_t& acquired_index) {    
     if (acquired_index < 0 || acquired_index >= sample_capacity_) {
         return InsStatus::attempted_to_acquire_invalid_index;
     }
@@ -111,7 +111,7 @@ InsStatus DelayedStateFR::addNewState(const FullState& new_state) {
         if (rm_status != InsStatus::ok) return rm_status;
     }
 
-    int16_t newest_state_ = (newest_state_ + 1) % state_capacity_;
+    newest_state_ = (newest_state_ + 1) % state_capacity_;
     recorded_states_++;
     
     StateBuffer[newest_state_].saved_state = new_state;
