@@ -57,4 +57,4 @@ Thumbs.db
 *~
 
 # data / generated data
-generated_data_sets/
+data_sets/generated_data_sets/

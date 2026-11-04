@@ -60,12 +60,13 @@ public:
         }
 
         // write the trajectory header
-        new_traj << "timestamp,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,orient_x,orient_y,orient_z,orient_w\n";
+        new_traj << "timestamp,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,orient_x,orient_y,orient_z,orient_w,mea_type\n";
 
         // apply all the measurements to the eskf and record the state after each one
         uint64_t mea_timestamp;
-        while (apply_next_measurement(&measurements, &mea_timestamp) != ins::SimStatus::no_more_measurements_to_apply) {
-            ins::SimStatus record_status = record_cur_state(&new_traj, mea_timestamp);
+        std::string mea_type;
+        while (apply_next_measurement(&measurements, &mea_timestamp, &mea_type) != ins::SimStatus::no_more_measurements_to_apply) {
+            ins::SimStatus record_status = record_cur_state(&new_traj, mea_timestamp, &mea_type);
             if (record_status != ins::SimStatus::ok) {
                 return record_status;
             }
@@ -201,7 +202,7 @@ public:
     };
 
 private:
-    ins::SimStatus apply_next_measurement(std::ifstream* measurements, uint64_t* mea_timestamp) {
+    ins::SimStatus apply_next_measurement(std::ifstream* measurements, uint64_t* mea_timestamp, std::string* mea_type) {
         // check if there is a next measurement
         std::string next_line;
         if(!std::getline(*measurements, next_line)) {
@@ -209,14 +210,13 @@ private:
         }
 
         // read line into vector
-        std::string mea_type;
         std::istringstream row(next_line);
         std::string field;
 
         std::vector<float> mea_vect;
 
         // determine the measurement type
-        std::getline(row, mea_type, ',');
+        std::getline(row, *mea_type, ',');
 
         std::getline(row, field, ',');
         uint64_t timestamp = std::stoull(field);
@@ -233,7 +233,7 @@ private:
         }
 
         // apply the measurement based on its type
-        if (mea_type == "AG") {
+        if (*mea_type == "AG") {
             ins::AGExternalV1Sample sample = {
                 .accel_x = mea_vect[0],
                 .accel_y = mea_vect[1], 
@@ -245,14 +245,14 @@ private:
             };
             sim_ins.receiveV1AccelGyro(sample);
 
-        } else if (mea_type == "BARO") {
+        } else if (*mea_type == "BARO") {
             ins::BaroExternalV1Sample sample = {
                 .z_pos = mea_vect[15],
                 .timestamp = timestamp,
             };
             sim_ins.receiveV1Baro(sample);
 
-        } else if (mea_type == "MAG") {
+        } else if (*mea_type == "MAG") {
             ins::MagExternalV1Sample sample = {
                 .ang_pos_x = mea_vect[6],
                 .ang_pos_y = mea_vect[7],
@@ -261,7 +261,7 @@ private:
             };
             sim_ins.receiveV1Mag(sample);
 
-        } else if (mea_type == "GNSS") {
+        } else if (*mea_type == "GNSS") {
             ins::GnssExternalV1Sample sample = {
                 .pos_x = mea_vect[9],
                 .pos_y = mea_vect[10],
@@ -280,7 +280,7 @@ private:
 
     // assumes that the new trajectory file already has a header and is on
     // a newline already.
-    ins::SimStatus record_cur_state(std::ofstream* new_traj, uint64_t timestamp) {
+    ins::SimStatus record_cur_state(std::ofstream* new_traj, uint64_t timestamp, std::string* mea_type) {
         if (new_traj == nullptr || !new_traj->is_open()) {
             return ins::SimStatus::file_not_open_for_recording_states;
         }
@@ -292,7 +292,8 @@ private:
         *new_traj << ns.position[0] << ',' << ns.position[1] << ',' << ns.position[2] << ',';
         *new_traj << ns.velocity[0] << ',' << ns.velocity[1] << ',' << ns.velocity[2] << ',';
         *new_traj << ns.angular_position.x() << ',' << ns.angular_position.y() << ',';
-        *new_traj << ns.angular_position.z() << ',' << ns.angular_position.w() << '\n';
+        *new_traj << ns.angular_position.z() << ',' << ns.angular_position.w() << ',';
+        *new_traj << *mea_type << "\n";
         return ins::SimStatus::ok;
     };
 };
