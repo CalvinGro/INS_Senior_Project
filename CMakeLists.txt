@@ -20,10 +20,10 @@ target_compile_features(eskf PUBLIC cxx_std_20)
 
 
 # simulation measurement csv noise adder
-add_executable(sim_noise_maker
-    "tools/sim_noise_maker.cc"
+add_executable(sim_v1_noise_maker
+    "tools/sim_v1_noise_maker.cc"
 )
-target_link_libraries(sim_noise_maker PRIVATE eskf)
+target_link_libraries(sim_v1_noise_maker PRIVATE eskf)
 
 
 # simulation version 1

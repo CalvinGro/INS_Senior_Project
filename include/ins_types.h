@@ -149,8 +149,8 @@ namespace ins {
         Eigen::Vector3f velocity = Eigen::Vector3f::Zero();
         Eigen::Quaternionf angular_position = Eigen::Quaternionf::Identity();
         Eigen::Vector3f accel_bias = Eigen::Vector3f::Zero();
-        Eigen::Vector3f gyro_bias = Eigen::Vector3f::Zero();
-        float baro_bias = 0.0f;
+        Eigen::Vector3f gyro_bias = Eigen::Vector3f::Zero(); // stored in bf coordinates (rad^2) / (s^2)
+        float baro_bias = 0.0f; // stored altitude (not pressure) bias in meters
     };
 
 
@@ -166,27 +166,27 @@ namespace ins {
 
 
     struct MagConfiguration {
-        Eigen::Vector3f offset = Eigen::Vector3f::Zero();
-        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
+        Eigen::Vector3f offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bf_covar = Eigen::Matrix3f::Identity();
-        Eigen::Vector3f mag_field_enu = Eigen::Vector3f::Zero();
+        Eigen::Matrix3f mag_covar = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Vector3f mag_field_enu = Eigen::Vector3f::Zero(); // vector in enu of magnetic field from ref frame
     };
 
     struct AccelConfiguration {
-        Eigen::Vector3f offset = Eigen::Vector3f::Zero();
-        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
+        Eigen::Vector3f offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bf_vgr = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bias_bf_vgr = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f accel_vgr = Eigen::Matrix3f::Identity();  // in sensor frame pre-correction
+        Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
     };
 
     struct GyroConfiguration {
-        Eigen::Vector3f offset = Eigen::Vector3f::Zero();
-        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity();
+        Eigen::Vector3f offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bf_vgr = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f bias_bf_vgr = Eigen::Matrix3f::Identity();
+        Eigen::Matrix3f orient_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
     };
 
     struct BaroConfiguration {
@@ -197,6 +197,10 @@ namespace ins {
     struct GnssConfiguration {
         Eigen::Vector3f antenna_lever_arm = Eigen::Vector3f::Zero();
         Eigen::Matrix3f default_covar = Eigen::Matrix3f::Identity();
+    };
+
+    struct InitValues {
+        float baro_offset = 0.0f; // altitude offset in meters
     };
 
     // this is in sensor frame
@@ -247,4 +251,4 @@ namespace ins {
         .gnss_default_var_y = 4.5084,
         .gnss_default_var_z = 18.0337
     };
-}
+};

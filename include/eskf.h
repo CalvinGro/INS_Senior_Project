@@ -38,6 +38,7 @@ public:
     GyroConfiguration conf_gyro;
     GnssConfiguration conf_gnss;
     BaroConfiguration conf_baro;
+    InitValues init_values;
     
 private:
     inline static const Eigen::Vector3f gravity = {0, 0, -9.80655};

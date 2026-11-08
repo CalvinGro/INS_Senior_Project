@@ -104,10 +104,10 @@ InsStatus Eskf::applyAccelGyroPredict(
         fx(15,15) = 1;
 
         Eigen::Matrix<float, 16, 16> perturbation_covar = Eigen::Matrix<float, 16, 16>::Zero();
-        perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_accel.bf_vgr * dt_seconds;
-        perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_gyro.bf_vgr * dt_seconds;
-        perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_accel.bias_bf_vgr * dt_seconds;
-        perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_gyro.bias_bf_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * conf_accel.accel_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(6,6) = Eigen::Matrix3f::Identity() * conf_gyro.orient_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(9,9) = Eigen::Matrix3f::Identity() * conf_accel.bias_vgr * dt_seconds;
+        perturbation_covar.block<3,3>(12,12) = Eigen::Matrix3f::Identity() * conf_gyro.bias_vgr * dt_seconds;
         perturbation_covar(15,15) = conf_baro.bias_vgr * dt_seconds;
 
         prev_state.escm = fx * prev_state.escm * fx.transpose() + perturbation_covar;

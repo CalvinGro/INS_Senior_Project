@@ -32,13 +32,13 @@ InsSimV1::InsSimV1(SimV1Configuration* config) {
     Eigen::Vector3f gyro_bias_covar = {config->gyro_bias_vgr_x, config->gyro_bias_vgr_y, config->gyro_bias_vgr_z};
 
     // apply sensor frame -> body frame transformation to covariance matrices and insert them into the eskf
-    eskf.conf_accel.bf_vgr = eskf.conf_accel.sensor_to_body * accel_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
-    eskf.conf_gyro.bf_vgr = eskf.conf_gyro.sensor_to_body * gyro_covar.asDiagonal() * eskf.conf_gyro.sensor_to_body.transpose();
-    eskf.conf_mag.bf_covar = eskf.conf_mag.sensor_to_body * mag_covar.asDiagonal() * eskf.conf_mag.sensor_to_body.transpose();
+    eskf.conf_accel.accel_vgr = eskf.conf_accel.sensor_to_body * accel_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
+    eskf.conf_gyro.orient_vgr = eskf.conf_gyro.sensor_to_body * gyro_covar.asDiagonal() * eskf.conf_gyro.sensor_to_body.transpose();
+    eskf.conf_mag.mag_covar = eskf.conf_mag.sensor_to_body * mag_covar.asDiagonal() * eskf.conf_mag.sensor_to_body.transpose();
     eskf.conf_baro.var = config->baro_var_z;
 
-    eskf.conf_accel.bias_bf_vgr = eskf.conf_accel.sensor_to_body * accel_bias_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
-    eskf.conf_gyro.bias_bf_vgr = eskf.conf_accel.sensor_to_body * gyro_bias_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
+    eskf.conf_accel.bias_vgr = eskf.conf_accel.sensor_to_body * accel_bias_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
+    eskf.conf_gyro.bias_vgr = eskf.conf_accel.sensor_to_body * gyro_bias_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
     eskf.conf_baro.bias_vgr = config->baro_bias_vgr_z;
 };
 
