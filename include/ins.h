@@ -68,7 +68,7 @@ public:
         uint64_t timestamp
     ) {};
 
-    void applyBaroMeasurment(
+    InsStatus applyBaroMeasurment(
         float pressure,
         uint64_t timestamp
     ) {};
@@ -81,9 +81,9 @@ public:
     ) {};
 
     InsStatus applyGnssMeasurement(
-        double lat,
-        double long,
-        double alt,
+        double latitude,
+        double longitude,
+        float altitude,
         float hAcc,
         float vAcc,
         uint64_t timestamp
@@ -91,5 +91,11 @@ public:
 
 private:
     float translatePressure(const float pressure) {};
+
+    Eigen::Vector3d geodeticToEcef(
+        double latitude, 
+        double longitude,
+        float altitude
+    ) {};
 };
 };

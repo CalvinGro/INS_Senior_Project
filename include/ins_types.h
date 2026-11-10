@@ -124,7 +124,11 @@ namespace ins {
         measurement_out_of_fr_range,
 
         // error overflow
-        loe_overflow
+        loe_overflow,
+
+        // measurement input errors
+        invalid_pressure,
+        invalid_gnss_position
     };
 
     enum class DelayStatus {
@@ -195,12 +199,14 @@ namespace ins {
     };
 
     struct GnssConfiguration {
-        Eigen::Vector3f antenna_lever_arm = Eigen::Vector3f::Zero();
-        Eigen::Matrix3f default_covar = Eigen::Matrix3f::Identity();
+        Eigen::Vector3f antenna_lever_arm = Eigen::Vector3f::Zero(); // lever arm in body frame
+        Eigen::Matrix3f default_var = Eigen::Vector3f::Zero();
     };
 
     struct InitValues {
         float baro_offset = 0.0f; // altitude offset in meters
+        Eigen::Vector3d origin_ecef; // the starting point / reference frame in meters
+        Eigen::Matrix3d ecef_to_enu; // rotation matrix from ecef to enu at reference framed
     };
 
     // this is in sensor frame

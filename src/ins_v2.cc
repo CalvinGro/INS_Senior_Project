@@ -12,72 +12,144 @@ Description - This file defines the interface to internally process actual measu
 #include "eskf.h"
 #include "ins.h"
 
+#include <numbers>
+#include <cmath>
 
 namespace ins {
-    InsStatus init(void) {
+    InsStatus Ins::init(void) {
 
     };
 
     InsStatus Ins::applyAccelGyroMeasurement(
-        float x_accel,
-        float y_accel,
-        float z_accel,
-        float x_ang_vel,
-        float y_ang_vel,
-        float z_ang_vel,
-        uint64_t timestamp
+        const float x_accel,
+        const float y_accel,
+        const float z_accel,
+        const float x_ang_vel,
+        const float y_ang_vel,
+        const float z_ang_vel,
+        const uint64_t timestamp
     ) {
         Eigen::Vector3f accel = {x_accel, y_accel, z_accel};
         Eigen::Vector3f ang_vel = {x_ang_vel, y_ang_vel, z_ang_vel};
-        Eigen::Matrix3f accel_transformation = eskf.conf_accel.correction * eskf.conf_accel.sensor_to_body;
-        Eigen::Matrix3f gyro_transformation = eskf.conf_gyro.correction * eskf.conf_gyro.sensor_to_body;
 
         AGInternalSample ag_sample = {
-            accel_transformation * accel * accel_transformation.transpose(),
-            gyro_transformation * ang_vel * gyro_transformation.transpose()
+            (eskf.conf_accel.sensor_to_body * eskf.conf_accel.correction) * (accel - eskf.conf_accel.offset),
+            (eskf.conf_gyro.sensor_to_body * eskf.conf_gyro.correction) * (ang_vel - eskf.conf_gyro.offset)
         };
 
         InternalMeasurement mea = {
             ag_sample,
             timestamp
         };
-        eskf.applyMeasurement(mea);
+        return eskf.applyMeasurement(mea);
     };
 
-    void Ins::applyBaroMeasurment(
-        float pressure,
-        uint64_t timestamp
+
+    InsStatus Ins::applyBaroMeasurment(
+        const float pressure,
+        const uint64_t timestamp
     ) {
-        float z_pos = Ins::translatePressure(pressure) - eskf.init_values.baro_offset;
+        if (!std::isfinite(pressure) || pressure <= 0.0f) {
+            return InsStatus::invalid_pressure;
+        }
+        float altitude = translatePressure(pressure);
+        float z_pos = altitude - eskf.init_values.baro_offset;
         BaroInternalSample baro_sample = { z_pos };
         InternalMeasurement mea = {
             baro_sample,
             timestamp
         };
-        eskf.applyMeasurement(mea);
+        return eskf.applyMeasurement(mea);
     };
+
 
     InsStatus Ins::applyMagMeasurement(
-        float x_mag_flux,
-        float y_mag_flux,
-        float z_mag_flux,
-        uint64_t timestamp
+        const float x_mag_flux,
+        const float y_mag_flux,
+        const float z_mag_flux,
+        const uint64_t timestamp
     ) {
+        Eigen::Vector3f mag_field = {x_mag_flux, y_mag_flux, z_mag_flux};
+        MagInternalSample mag_sample = { 
+            (eskf.conf_mag.sensor_to_body * eskf.conf_mag.correction) * (mag_field - eskf.conf_mag.offset) 
+        };
 
+        InternalMeasurement mea = {
+            mag_sample,
+            timestamp
+        };
+        return eskf.applyMeasurement(mea);
     };
+    
 
     InsStatus Ins::applyGnssMeasurement(
-        double lat,
-        double long,
-        double alt,
-        float hAcc,
-        float vAcc,
-        uint64_t timestamp
+        const double latitude,
+        const double longitude,
+        const  float altitude,
+        const float hAcc,
+        const float vAcc,
+        const uint64_t timestamp
     ) {
 
+        if (!std::isfinite(latitude) || !std::isfinite(longitude) || !std::isfinite(altitude)) {
+            return InsStatus::invalid_gnss_position;
+        }
+        Eigen::Vector3f gnss_var = {hAcc, hAcc, vAcc};
+        if (!std::isfinite(hAcc) || hAcc <= 0.0f) {
+            gnss_var[0] = eskf.conf_gnss.default_var[0];
+            gnss_var[1] = eskf.conf_gnss.default_var[1];
+        }
+        if (!std::isfinite(vAcc) || vAcc <= 0.0f) {
+            gnss_var[2] = eskf.conf_gnss.default_var[2];
+        }
+
+        const Eigen::Vector3d ecef_pos = geodeticToEcef(latitude, longitude, altitude);
+
+        const Eigen::Vector3f enu_pos = (eskf.init_values.ecef_to_enu * (ecef_pos - eskf.init_values.origin_ecef)).cast<float>();
+
+        GnssInternalSample gnss_sample = {
+            enu_pos,
+            gnss_var
+        };
+        InternalMeasurement mea = {
+            gnss_sample,
+            timestamp
+        };
+        return eskf.applyMeasurement(mea);
     };
+
 
     float Ins::translatePressure(const float pressure) {
         return 44307.69396f * (1.0f - std::pow((pressure / 101325.0f), 0.190284f));
+    };
+
+
+    Eigen::Vector3d Ins::geodeticToEcef(
+        const double latitude, 
+        const double longitude,
+        const float altitude
+    ) {
+
+        constexpr double a = 6378137.0;           // equatorial radius in meters
+        constexpr double f = 1.0 / 298.257223563; // flatting ratio of the earth
+        constexpr double e2 = f * (2.0 - f);      // earth's eccentricity squared
+        constexpr double deg_to_rad = std::numbers::pi / 180.0;
+
+        const double lat_rad = latitude * deg_to_rad;
+        const double long_rad = longitude * deg_to_rad;
+        
+        const double sin_lat = std::sin(lat_rad);
+        const double cos_lat = std::cos(lat_rad);
+        const double sin_long = std::sin(long_rad);
+        const double cos_long = std::cos(long_rad);
+
+        const double N = a / std::sqrt(1.0 - e2 * sin_lat * sin_lat);  // radius of curvature in the prime vertical
+
+        // return ECEF position
+        return Eigen::Vector3d{
+            (N + altitude) * cos_lat * cos_long,
+            (N + altitude) * cos_lat * sin_long,
+            (N * (1.0 - e2) + altitude) * sin_lat
+        };
     };
 };
