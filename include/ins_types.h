@@ -127,8 +127,9 @@ namespace ins {
         loe_overflow,
 
         // measurement input errors
-        invalid_pressure,
-        invalid_gnss_position,
+        invalid_pressure_measurement,
+        invalid_gnss_position_measurement,
+        invalid_mag_field_measurement,
         duplicate_ag_timestamps_during_init,
 
         // init
@@ -182,7 +183,7 @@ namespace ins {
         Eigen::Vector3f offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f mag_covar = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Vector3f mag_var = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
         Eigen::Vector3f mag_field_enu = Eigen::Vector3f::Zero(); // vector in enu of magnetic field from ref frame
     };
 

@@ -43,6 +43,28 @@ InsStatus Ins::initBaroAccumulate(
     return InsStatus::ok;
 };    
 
+InsStatus Ins::initMagAccumulate(
+    Eigen::Vector3f mag_field,
+    uint64_t timestamp
+) {
+    // determine new mean and covariance vectors
+    // uses a incremental mean calculation with fixed variance inverse-variance weighting
+    eskf.init_state.mag_count += 1;
+    if (eskf.init_state.mag_count == 1) {
+        eskf.init_state.mag_field_mean = mag_field;
+        eskf.init_state.mag_field_var = eskf.conf_mag.mag_var;
+    } else {
+        eskf.init_state.mag_field_mean = 
+            eskf.init_state.mag_field_mean + ((mag_field - eskf.init_state.mag_field_mean) / eskf.init_state.mag_count);
+        eskf.init_state.mag_field_var = eskf.conf_mag.mag_var / eskf.init_state.mag_count;
+    }
+
+    if (Ins::readyToStart(timestamp)) {
+        return Ins::init();
+    }
+    return InsStatus::ok;
+};
+
 InsStatus Ins::initAccelGyroAccumulate(
         Eigen::Vector3f accel,
         Eigen::Vector3f ang_vel,
@@ -79,6 +101,10 @@ InsStatus Ins::initAccelGyroAccumulate(
         );
     }
     eskf.init_state.prev_ag_timestamp = timestamp;
+
+    if (Ins::readyToStart(timestamp)) {
+        return Ins::init();
+    }
     return InsStatus::ok;
 };
 
@@ -94,6 +120,7 @@ bool Ins::readyToStart(uint64_t timestamp) {
     return true;
 };
 
+// acculmulation method for measurements with non-fixed variances
 void Ins::accumulate(
     const Eigen::Vector3f& measurement,
     const Eigen::Vector3f& measurement_var,

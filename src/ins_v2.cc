@@ -59,7 +59,7 @@ namespace ins {
         const uint64_t timestamp
     ) {
         if (!std::isfinite(pressure) || pressure <= 0.0f) {
-            return InsStatus::invalid_pressure;
+            return InsStatus::invalid_pressure_measurement;
         }
 
         // Check if in initialization Phase
@@ -88,6 +88,11 @@ namespace ins {
         const float z_mag_flux,
         const uint64_t timestamp
     ) {
+        if (
+            !std::isfinite(x_mag_flux) || !std::isfinite(y_mag_flux) || !std::isfinite(z_mag_flux)) {
+            return InsStatus::invalid_mag_field_measurement;
+        }
+
         Eigen::Vector3f mag_field = {x_mag_flux, y_mag_flux, z_mag_flux};
 
         // Check if in initialization Phase
@@ -123,7 +128,7 @@ namespace ins {
         const uint64_t timestamp
     ) {
         if (!std::isfinite(latitude) || !std::isfinite(longitude) || !std::isfinite(altitude)) {
-            return InsStatus::invalid_gnss_position;
+            return InsStatus::invalid_gnss_position_measurement;
         }
 
         Eigen::Vector3f gnss_var = {hAcc, hAcc, vAcc};

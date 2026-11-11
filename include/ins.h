@@ -45,7 +45,7 @@ public:
         gyro_config->bias_vgr = (gyro_transformation * gyro_config->bias_vgr * gyro_transformation.transpose()).eval();
 
         const Eigen::Matrix3f mag_transformation = mag_config->correction * mag_config->sensor_to_body;
-        mag_config->mag_covar = (mag_transformation * mag_config->mag_covar * mag_transformation.transpose()).eval();
+        mag_config->mag_var = (mag_transformation * mag_config->mag_var * mag_transformation.transpose()).eval();
 
         eskf.conf_accel = *accel_config;
         eskf.conf_gyro = *gyro_config;
