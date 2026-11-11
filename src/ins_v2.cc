@@ -16,10 +16,6 @@ Description - This file defines the interface to internally process actual measu
 #include <cmath>
 
 namespace ins {
-    InsStatus Ins::init(void) {
-
-    };
-
     InsStatus Ins::applyAccelGyroMeasurement(
         const float x_accel,
         const float y_accel,
@@ -31,6 +27,19 @@ namespace ins {
     ) {
         Eigen::Vector3f accel = {x_accel, y_accel, z_accel};
         Eigen::Vector3f ang_vel = {x_ang_vel, y_ang_vel, z_ang_vel};
+
+        // Check if in initialization Phase
+        if (eskf.init_state.init_phase == InsPhase::uninitialized) {
+            eskf.init_state.first_timestamp = timestamp;
+            eskf.init_state.init_phase = InsPhase::initializing;
+        }
+        if (eskf.init_state.init_phase == InsPhase::initializing) {
+            return Ins::initAccelGyroAccumulate(
+                accel,
+                ang_vel,
+                timestamp
+            );
+        }
 
         AGInternalSample ag_sample = {
             (eskf.conf_accel.sensor_to_body * eskf.conf_accel.correction) * (accel - eskf.conf_accel.offset),
@@ -52,6 +61,16 @@ namespace ins {
         if (!std::isfinite(pressure) || pressure <= 0.0f) {
             return InsStatus::invalid_pressure;
         }
+
+        // Check if in initialization Phase
+        if (eskf.init_state.init_phase == InsPhase::uninitialized) {
+            eskf.init_state.first_timestamp = timestamp;
+            eskf.init_state.init_phase = InsPhase::initializing;
+        }
+        if (eskf.init_state.init_phase == InsPhase::initializing) {
+            return Ins::initBaroAccumulate(pressure, timestamp);
+        }
+
         float altitude = translatePressure(pressure);
         float z_pos = altitude - eskf.init_values.baro_offset;
         BaroInternalSample baro_sample = { z_pos };
@@ -70,6 +89,19 @@ namespace ins {
         const uint64_t timestamp
     ) {
         Eigen::Vector3f mag_field = {x_mag_flux, y_mag_flux, z_mag_flux};
+
+        // Check if in initialization Phase
+        if (eskf.init_state.init_phase == InsPhase::uninitialized) {
+            eskf.init_state.first_timestamp = timestamp;
+            eskf.init_state.init_phase = InsPhase::initializing;
+        }
+        if (eskf.init_state.init_phase == InsPhase::initializing) {
+            return Ins::initMagAccumulate(
+                mag_field,
+                timestamp
+            );
+        }
+
         MagInternalSample mag_sample = { 
             (eskf.conf_mag.sensor_to_body * eskf.conf_mag.correction) * (mag_field - eskf.conf_mag.offset) 
         };
@@ -85,15 +117,15 @@ namespace ins {
     InsStatus Ins::applyGnssMeasurement(
         const double latitude,
         const double longitude,
-        const  float altitude,
+        const float altitude,
         const float hAcc,
         const float vAcc,
         const uint64_t timestamp
     ) {
-
         if (!std::isfinite(latitude) || !std::isfinite(longitude) || !std::isfinite(altitude)) {
             return InsStatus::invalid_gnss_position;
         }
+
         Eigen::Vector3f gnss_var = {hAcc, hAcc, vAcc};
         if (!std::isfinite(hAcc) || hAcc <= 0.0f) {
             gnss_var[0] = eskf.conf_gnss.default_var[0];
@@ -104,6 +136,19 @@ namespace ins {
         }
 
         const Eigen::Vector3d ecef_pos = geodeticToEcef(latitude, longitude, altitude);
+
+        // Check if in initialization Phase
+        if (eskf.init_state.init_phase == InsPhase::uninitialized) {
+            eskf.init_state.first_timestamp = timestamp;
+            eskf.init_state.init_phase = InsPhase::initializing;
+        }
+        if (eskf.init_state.init_phase == InsPhase::initializing) {
+            return Ins::initGnssAccumulate(
+                ecef_pos,
+                gnss_var,
+                timestamp
+            );
+        }
 
         const Eigen::Vector3f enu_pos = (eskf.init_values.ecef_to_enu * (ecef_pos - eskf.init_values.origin_ecef)).cast<float>();
 

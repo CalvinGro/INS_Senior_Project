@@ -128,13 +128,16 @@ namespace ins {
 
         // measurement input errors
         invalid_pressure,
-        invalid_gnss_position
+        invalid_gnss_position,
+        duplicate_ag_timestamps_during_init,
+
+        // init
     };
 
     enum class DelayStatus {
         out_of_bounds,
         delayed,
-        on_time
+        on_time,
     };
 
     enum class SimStatus {
@@ -145,6 +148,12 @@ namespace ins {
         no_output_file_created_for_trajectory_building,
         cant_apply_malformed_measurement,
         get_failed,
+    };
+
+    enum class InsPhase {
+        uninitialized,
+        initializing,
+        running,
     };
 
     
@@ -181,7 +190,7 @@ namespace ins {
         Eigen::Vector3f offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f accel_vgr = Eigen::Matrix3f::Identity();  // in sensor frame pre-correction
+        Eigen::Vector3f accel_vgr = Eigen::Vector3f::Zero();  // in sensor frame pre-correction
         Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
     };
 
@@ -189,13 +198,13 @@ namespace ins {
         Eigen::Vector3f offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
-        Eigen::Matrix3f orient_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Vector3f ang_vel_vgr = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
         Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
     };
 
     struct BaroConfiguration {
-        float var = 0;
-        float bias_vgr = 0;
+        float var = 0; // pressure variance (Pa^2)
+        float bias_vgr = 0; // in m^2/s
     };
 
     struct GnssConfiguration {
@@ -207,6 +216,30 @@ namespace ins {
         float baro_offset = 0.0f; // altitude offset in meters
         Eigen::Vector3d origin_ecef; // the starting point / reference frame in meters
         Eigen::Matrix3d ecef_to_enu; // rotation matrix from ecef to enu at reference framed
+    };
+
+    struct InitAccumulationState {
+        InsPhase init_phase = InsPhase::uninitialized;
+        uint64_t first_timestamp = 0;
+        uint64_t prev_ag_timestamp = 0; // used for vgr calculations
+
+        uint16_t ag_count = 0;
+        Eigen::Vector3f accel_mean = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
+        Eigen::Vector3f ang_vel_mean = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
+        Eigen::Vector3f accel_var = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
+        Eigen::Vector3f ang_vel_var = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)     
+
+        uint16_t mag_count = 0; 
+        Eigen::Vector3f mag_field_mean = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
+        Eigen::Vector3f mag_field_var = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
+
+        uint16_t baro_count = 0;
+        float baro_pres_mean = 0.0f; // pressure in Pa
+        float baro_pres_var = 0.0f; // pressure in Pa^2
+
+        uint16_t gnss_count = 0;
+        Eigen::Vector3d ecef_pos_mean = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
+        Eigen::Matrix3d ecef_pos_covar = Eigen::Matrix3f::Identity(); // sensor frame (no correction or offset applied yet)
     };
 
     // this is in sensor frame

@@ -41,7 +41,7 @@ public:
         accel_config->bias_vgr = (accel_transformation * accel_config->bias_vgr * accel_transformation.transpose()).eval();
 
         const Eigen::Matrix3f gyro_transformation = gyro_config->correction * gyro_config->sensor_to_body;
-        gyro_config->orient_vgr = (gyro_transformation * gyro_config->orient_vgr * gyro_transformation.transpose()).eval();
+        gyro_config->ang_vel_vgr = (gyro_transformation * gyro_config->ang_vel_vgr * gyro_transformation.transpose()).eval();
         gyro_config->bias_vgr = (gyro_transformation * gyro_config->bias_vgr * gyro_transformation.transpose()).eval();
 
         const Eigen::Matrix3f mag_transformation = mag_config->correction * mag_config->sensor_to_body;
@@ -58,6 +58,12 @@ public:
 
     };
 
+    InsStatus initAccelGyroAccumulate(
+        Eigen::Vector3f accel,
+        Eigen::Vector3f ang_vel,
+        uint64_t timestamp 
+    ) {};
+
     InsStatus applyAccelGyroMeasurement(
         float x_accel,
         float y_accel,
@@ -65,6 +71,11 @@ public:
         float x_orient,
         float y_orient,
         float z_orient,
+        uint64_t timestamp  
+    ) {};
+
+    InsStatus initBaroAccumulate(
+        float pressure,
         uint64_t timestamp
     ) {};
 
@@ -73,10 +84,21 @@ public:
         uint64_t timestamp
     ) {};
 
+    InsStatus initMagAccumulate(
+        Eigen::Vector3f mag_field,
+        uint64_t timestamp
+    ) {};
+
     InsStatus applyMagMeasurement(
         float x_mag_flux,
         float y_mag_flux,
         float z_mag_flux,
+        uint64_t timestamp
+    ) {};
+
+    InsStatus initGnssAccumulate(
+        Eigen::Vector3d ecef_pos,
+        Eigen::Vector3f gnss_var,
         uint64_t timestamp
     ) {};
 
@@ -90,6 +112,16 @@ public:
     ) {};
 
 private:
+
+    bool readyToStart(uint64_t timestamp) {};
+    
+    void accumulate(
+        const Eigen::Vector3f& measurement,
+        const Eigen::Vector3f& measurement_var,
+        Eigen::Vector3f& mean,
+        Eigen::Vector3f& mean_var
+    ) {};
+
     float translatePressure(const float pressure) {};
 
     Eigen::Vector3d geodeticToEcef(

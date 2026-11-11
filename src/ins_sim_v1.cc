@@ -33,7 +33,7 @@ InsSimV1::InsSimV1(SimV1Configuration* config) {
 
     // apply sensor frame -> body frame transformation to covariance matrices and insert them into the eskf
     eskf.conf_accel.accel_vgr = eskf.conf_accel.sensor_to_body * accel_covar.asDiagonal() * eskf.conf_accel.sensor_to_body.transpose();
-    eskf.conf_gyro.orient_vgr = eskf.conf_gyro.sensor_to_body * gyro_covar.asDiagonal() * eskf.conf_gyro.sensor_to_body.transpose();
+    eskf.conf_gyro.ang_vel_vgr = eskf.conf_gyro.sensor_to_body * gyro_covar.asDiagonal() * eskf.conf_gyro.sensor_to_body.transpose();
     eskf.conf_mag.mag_covar = eskf.conf_mag.sensor_to_body * mag_covar.asDiagonal() * eskf.conf_mag.sensor_to_body.transpose();
     eskf.conf_baro.var = config->baro_var_z;
 
