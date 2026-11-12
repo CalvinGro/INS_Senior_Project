@@ -239,8 +239,8 @@ namespace ins {
         float baro_pres_var = 0.0f; // pressure in Pa^2
 
         uint16_t gnss_count = 0;
-        Eigen::Vector3d ecef_pos_mean = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)
-        Eigen::Matrix3d ecef_pos_covar = Eigen::Matrix3f::Identity(); // sensor frame (no correction or offset applied yet)
+        Eigen::Vector3d ecef_pos_mean = Eigen::Vector3f::Zero(); 
+        Eigen::Matrix3d enu_pos_var = Eigen::Matrix3f::Identity(); // relative to enu coordinates at the system's location
     };
 
     // this is in sensor frame

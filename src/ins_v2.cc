@@ -120,8 +120,8 @@ namespace ins {
     
 
     InsStatus Ins::applyGnssMeasurement(
-        const double latitude,
-        const double longitude,
+        const double latitude, // degrees
+        const double longitude, // degrees
         const float altitude,
         const float hAcc,
         const float vAcc,
@@ -130,6 +130,11 @@ namespace ins {
         if (!std::isfinite(latitude) || !std::isfinite(longitude) || !std::isfinite(altitude)) {
             return InsStatus::invalid_gnss_position_measurement;
         }
+
+        // translate lat and long from degrees to radians
+        constexpr double deg_to_rad = std::numbers::pi / 180.0;
+        const double lat_rad = latitude * deg_to_rad;
+        const double long_rad = longitude * deg_to_rad;
 
         Eigen::Vector3f gnss_var = {hAcc, hAcc, vAcc};
         if (!std::isfinite(hAcc) || hAcc <= 0.0f) {
@@ -140,7 +145,7 @@ namespace ins {
             gnss_var[2] = eskf.conf_gnss.default_var[2];
         }
 
-        const Eigen::Vector3d ecef_pos = geodeticToEcef(latitude, longitude, altitude);
+        const Eigen::Vector3d ecef_pos = geodeticToEcef(lat_rad, long_rad, altitude);
 
         // Check if in initialization Phase
         if (eskf.init_state.init_phase == InsPhase::uninitialized) {
@@ -151,6 +156,8 @@ namespace ins {
             return Ins::initGnssAccumulate(
                 ecef_pos,
                 gnss_var,
+                lat_rad,
+                long_rad,
                 timestamp
             );
         }
@@ -175,18 +182,14 @@ namespace ins {
 
 
     Eigen::Vector3d Ins::geodeticToEcef(
-        const double latitude, 
-        const double longitude,
+        const double lat_rad, 
+        const double long_rad, 
         const float altitude
     ) {
 
         constexpr double a = 6378137.0;           // equatorial radius in meters
         constexpr double f = 1.0 / 298.257223563; // flatting ratio of the earth
         constexpr double e2 = f * (2.0 - f);      // earth's eccentricity squared
-        constexpr double deg_to_rad = std::numbers::pi / 180.0;
-
-        const double lat_rad = latitude * deg_to_rad;
-        const double long_rad = longitude * deg_to_rad;
         
         const double sin_lat = std::sin(lat_rad);
         const double cos_lat = std::cos(lat_rad);

@@ -65,12 +65,36 @@ InsStatus Ins::initMagAccumulate(
     return InsStatus::ok;
 };
 
+InsStatus Ins::initGnssAccumulate(
+    Eigen::Vector3d ecef_pos,
+    Eigen::Vector3f gnss_var,
+    double lat_rad,
+    double long_rad,
+    uint64_t timestamp
+) {
+    eskf.init_state.gnss_count += 1;
+    if (eskf.init_state.gnss_count == 1) {
+        eskf.init_state.ecef_pos_mean = ecef_pos;
+        eskf.init_state.enu_pos_var = gnss_var;
+    } else {        
+        const Eigen::Vector3f K_gain_enu = 
+            eskf.init_state.enu_pos_var.cwiseQuotient(eskf.init_state.enu_pos_var + gnss_var);
+        const Eigen::Matrix3d K_gain_ecef = rotateEnuToEskf(K_gain_enu.cast<double>(), lat_rad, long_rad);
+
+        eskf.init_state.enu_pos_var = gnss_var.cwiseProduct(K_gain_enu);
+        eskf.init_state.ecef_pos_mean += K_gain_ecef * (ecef_pos - eskf.init_state.ecef_pos_mean);
+    }
+    if (Ins::readyToStart(timestamp)) {
+        return Ins::init();
+    }
+    return InsStatus::ok;
+};
+
 InsStatus Ins::initAccelGyroAccumulate(
         Eigen::Vector3f accel,
         Eigen::Vector3f ang_vel,
         uint64_t timestamp 
 ) {
-
     eskf.init_state.ag_count += 1;
     if (eskf.init_state.ag_count == 1) {
         eskf.init_state.accel_mean = accel;
@@ -84,7 +108,6 @@ InsStatus Ins::initAccelGyroAccumulate(
             eskf.init_state.ag_count -= 1;
             return InsStatus::duplicate_ag_timestamps_during_init;
         }
-
         const float dt_sec = static_cast<float>(dt) * 1e-3f;
         
         Ins::accumulate(
@@ -130,5 +153,25 @@ void Ins::accumulate(
     const Eigen::Vector3f K_gain = mean_var.cwiseQuotient(mean_var + measurement_var);
     mean_var = measurement_var.cwiseProduct(K_gain);
     mean = mean + K_gain.cwiseProduct(measurement - mean);
+};
+
+// method to rotate a variance expressed in enu into the ecef frame for a given geolocation
+Eigen::Matrix3d Ins::rotateEnuToEskf(
+    const Eigen::Vector3d enu_variance,
+    const double latitude, // radians
+    const double longitude // radians
+) {
+    const double sin_lat = std::sin(latitude);
+    const double cos_lat = std::cos(latitude);
+    const double sin_long = std::sin(longitude);
+    const double cos_long = std::cos(longitude);
+
+    Eigen::Matrix3d R_enu_to_ecef;
+    R_enu_to_ecef <<
+        -sin_long, -sin_lat * cos_long, cos_lat * cos_long,
+         cos_long, -sin_lat * sin_long, cos_lat * sin_long,
+              0.0,             cos_lat,            sin_lat;
+
+    return R_enu_to_ecef * enu_variance.asDiagonal() * R_enu_to_ecef.transpose();
 };
 };

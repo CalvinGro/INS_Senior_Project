@@ -99,6 +99,8 @@ public:
     InsStatus initGnssAccumulate(
         Eigen::Vector3d ecef_pos,
         Eigen::Vector3f gnss_var,
+        double lat_rad,
+        double long_rad,
         uint64_t timestamp
     ) {};
 
@@ -128,6 +130,12 @@ private:
         double latitude, 
         double longitude,
         float altitude
+    ) {};
+
+    Eigen::Matrix3d rotateEnuToEskf(
+        const Eigen::Vector3d enu_variance,
+        double latitude, // radians
+        double longitude // radians
     ) {};
 };
 };
