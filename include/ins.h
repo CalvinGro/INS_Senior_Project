@@ -34,18 +34,6 @@ public:
         BaroConfiguration* baro_config, 
         GnssConfiguration* gnss_config
     ) {
-        // Perform a change of bases on all the covariance matrices rotate them into body frame.
-        const Eigen::Matrix3f accel_transformation = accel_config->correction * accel_config->sensor_to_body;
-        accel_config->accel_vgr = (accel_transformation * accel_config->accel_vgr * accel_transformation.transpose()).eval();
-        accel_config->bias_vgr = (accel_transformation * accel_config->bias_vgr * accel_transformation.transpose()).eval();
-
-        const Eigen::Matrix3f gyro_transformation = gyro_config->correction * gyro_config->sensor_to_body;
-        gyro_config->ang_vel_vgr = (gyro_transformation * gyro_config->ang_vel_vgr * gyro_transformation.transpose()).eval();
-        gyro_config->bias_vgr = (gyro_transformation * gyro_config->bias_vgr * gyro_transformation.transpose()).eval();
-
-        const Eigen::Matrix3f mag_transformation = mag_config->correction * mag_config->sensor_to_body;
-        mag_config->mag_var = (mag_transformation * mag_config->mag_var * mag_transformation.transpose()).eval();
-
         eskf.conf_accel = *accel_config;
         eskf.conf_gyro = *gyro_config;
         eskf.conf_baro = *baro_config;

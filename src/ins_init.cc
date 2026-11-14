@@ -16,22 +16,29 @@ Description - This file defines the methods to handle each measurement type duri
 #include <cmath>
 
 #define INIT_AG_DT ((1.0f / 200.0f)) // in seconds because vgr values use seconds
+#define TRANSFORM_COVAR(P, A) (((A) * (P) * (A).transpose()).eval()) // macro for change of basis
 
 namespace ins {
 
 InsStatus Ins::init(uint64_t last_timestamp) {
 
+// Gyroscope
     // gyro config tranlations and settings
     Eigen::Matrix3d gyro_transform = eskf.conf_gyro.sensor_to_body.cast<double>() * eskf.conf_gyro.correction.cast<double>();
     eskf.settings.gyro_correction = gyro_transform.cast<float>();
     eskf.settings.gyro_offset = eskf.conf_gyro.offset;
+    eskf.settings.ang_vel_vgr = TRANSFORM_COVAR(eskf.conf_gyro.ang_vel_vgr.asDiagonal(), eskf.settings.gyro_correction);
+    eskf.settings.gyro_bias_vgr = TRANSFORM_COVAR(eskf.conf_gyro.bias_vgr.asDiagonal(), eskf.settings.gyro_correction);
 
+// Accelerometer and Magnetometer
     // accel config tranlations and settings
     const Eigen::Matrix3d accel_transform = eskf.conf_accel.sensor_to_body.cast<double>() * eskf.conf_accel.correction.cast<double>();
     eskf.settings.accel_correction = accel_transform.cast<float>();
     eskf.settings.accel_offset = eskf.conf_accel.offset;
     const Eigen::Vector3d accel_mean_body = 
         accel_transform * (eskf.init_state.accel_mean.cast<double>() - eskf.conf_accel.offset.cast<double>());
+    eskf.settings.accel_vgr = TRANSFORM_COVAR(eskf.conf_accel.accel_vgr.asDiagonal(), eskf.settings.accel_correction);
+    eskf.settings.accel_bias_vgr = TRANSFORM_COVAR(eskf.conf_accel.bias_vgr.asDiagonal(), eskf.settings.accel_correction);
 
     // mag config tranlations and settings
     const Eigen::Matrix3d mag_transform = eskf.conf_mag.sensor_to_body.cast<double>() * eskf.conf_mag.correction.cast<double>();
@@ -40,19 +47,28 @@ InsStatus Ins::init(uint64_t last_timestamp) {
     eskf.settings.mag_field_enu = eskf.conf_mag.mag_field_enu;
     const Eigen::Vector3d mag_mean_body = 
         mag_transform * (eskf.init_state.mag_field_mean.cast<double>() - eskf.conf_mag.offset.cast<double>());
+    eskf.settings.mag_var = TRANSFORM_COVAR(eskf.conf_mag.mag_var.asDiagonal(), eskf.settings.mag_correction);
 
     // use magnetometer and accelerometer to perform 2 axis triad estimate of the orientation.
     Eigen::Matrix<double,6,6> orient_input_covar = Eigen::Matrix<double, 6, 6>::Zero();
-    orient_input_covar.block<3,3>(0,0) = accel_transform * eskf.init_state.accel_var.asDiagonal() * accel_transform.transpose();
-    orient_input_covar.block<3,3>(3,3) = mag_transform * eskf.init_state.mag_field_var.asDiagonal() * mag_transform.transpose(); 
+    const Eigen::Vector3d accel_input_var = eskf.init_state.accel_var.cast<double>() + eskf.conf_accel.initial_residual_bias_var.cast<double>();
+    orient_input_covar.block<3,3>(0,0) = TRANSFORM_COVAR(accel_input_var.asDiagonal(), accel_transform);
+    orient_input_covar.block<3,3>(3,3) = TRANSFORM_COVAR(eskf.init_state.mag_field_var.cast<double>().asDiagonal(), mag_transform);
     Eigen::Matrix3d R0;
     Eigen::Matrix<double,3,6> J = buildOrientationJacobian(accel_mean_body, mag_mean_body, R0);    
     const Eigen::Matrix3f orient_covar = (J * orient_input_covar * J.transpose()).cast<float>(); // enu orientation error
     const Eigen::Quaternionf orient_mean = Eigen::Quaterniond(R0).normalized().cast<float>(); // enu orientation mean
 
+// Gnss
     // calculate the starting position in ecef and use it as the reference frame
-    eskf.settings.origin_ecef = eskf.init_state.ecef_pos_mean;
+    eskf.settings.antenna_lever_arm = eskf.conf_gnss.antenna_lever_arm;
+    eskf.settings.default_gnss_var = eskf.conf_gnss.default_var;
 
+    const Eigen::Vector3d ecef_antenna_lever_arm = 
+        eskf.settings.ecef_to_enu.transpose() * R0 * eskf.settings.antenna_lever_arm.cast<double>();
+    eskf.settings.origin_ecef = eskf.init_state.ecef_pos_mean - ecef_antenna_lever_arm;
+
+// Barometer
     // calculate the barometer altitude offset and variance in meters
     eskf.settings.baro_offset = translatePressure(eskf.init_state.baro_pres_mean);
     
@@ -63,10 +79,18 @@ InsStatus Ins::init(uint64_t last_timestamp) {
 
     // calculate the derivative of pressure to altitude function
     const double dh_dp = -(A * k / p0) * std::pow(eskf.init_state.baro_pres_mean / p0, k - 1.0);
-    const double baro_pos_var = dh_dp * dh_dp * eskf.init_state.baro_pres_var; // m²
-    
-    // declare the starting state
-    eskf.cur_state.last_pred = eskf.init_state.last_ag;
+    const float baro_pos_var = static_cast<float>(dh_dp * dh_dp * eskf.init_state.baro_pres_var); // m²
+    eskf.settings.baro_var = static_cast<float>(dh_dp * dh_dp * eskf.conf_baro.var);
+    eskf.settings.baro_bias_vgr = eskf.conf_baro.bias_vgr;
+
+// declare the starting state
+    eskf.cur_state.last_pred = {
+        eskf.settings.accel_correction *
+            (eskf.init_state.last_ag.accel - eskf.settings.accel_offset),
+
+        eskf.settings.gyro_correction *
+            (eskf.init_state.last_ag.ang_vel - eskf.settings.gyro_offset)
+    };
     eskf.cur_state.last_timestamp = last_timestamp;
     
     eskf.cur_state.ns.position = {0,0,0}; // initial ecef offset is used to initalize the ref frame at zero
@@ -74,21 +98,20 @@ InsStatus Ins::init(uint64_t last_timestamp) {
     eskf.cur_state.ns.angular_position = orient_mean;
     eskf.cur_state.ns.accel_bias = {0,0,0}; // the accel bias is unobservable due to accel's use in triad
     eskf.cur_state.ns.baro_bias = 0.0f; // initial bias is used as altitude bias, but the variance is still set
-    eskf.cur_state.ns.gyro_bias = eskf.settings.gyro_correction * 
-        (eskf.init_state.ang_vel_mean - eskf.settings.gyro_offset).asDiagonal() * eskf.settings.gyro_correction.transpose();
+    eskf.cur_state.ns.gyro_bias = eskf.settings.gyro_correction * (eskf.init_state.ang_vel_mean - eskf.settings.gyro_offset);
     
     eskf.cur_state.escm = ESCovarMtx::Identity();
-    eskf.cur_state.escm.block<3,3>(0,0) = eskf.init_state.enu_pos_var;
+    eskf.cur_state.escm.block<3,3>(0,0) = eskf.init_state.enu_pos_var.asDiagonal();
     eskf.cur_state.escm.block<3,3>(3,3) = Eigen::Matrix3f::Identity() * (0.01f * 0.01f); // add a small error despite assumption of stationary init
     eskf.cur_state.escm.block<3,3>(6,6) = orient_covar;
-    eskf.cur_state.escm.block<3,3>(9,9) =  eskf.settings.accel_correction * 
-        eskf.conf_accel.initial_residual_bias_var.asDiagonal() * eskf.settings.accel_correction.transpose(); // accel bias var
-    eskf.cur_state.escm.block<3,3>(12,12) = eskf.settings.gyro_correction * 
-        eskf.init_state.ang_vel_var.asDiagonal() * eskf.settings.gyro_correction.transpose(); // gyro bias var
+    eskf.cur_state.escm.block<3,3>(9,9) = 
+        TRANSFORM_COVAR(eskf.conf_accel.initial_residual_bias_var.asDiagonal(), eskf.settings.accel_correction); // accel bias var
+    eskf.cur_state.escm.block<3,3>(12,12) = 
+        TRANSFORM_COVAR(eskf.init_state.ang_vel_var.asDiagonal(), eskf.settings.gyro_correction); // gyro bias var
     eskf.cur_state.escm(15,15) = baro_pos_var; // baro bias var
 
-    // initialize the delayed state filter with a first measurement
-
+    eskf.init_state.init_phase = InsPhase::running;
+    return InsStatus::ok;
 };
 
 
@@ -149,12 +172,12 @@ InsStatus Ins::initGnssAccumulate(
     if (eskf.init_state.gnss_count == 1) {
         eskf.init_state.ecef_pos_mean = ecef_pos;
         eskf.init_state.enu_pos_var = gnss_var;
-        eskf.settings.ecef_to_enu = calcRotationEnuToEskf(lat_rad, long_rad);
+        eskf.settings.ecef_to_enu = calcRotationEnuToEskf(lat_rad, long_rad).transpose();
     } else {        
         const Eigen::Vector3f K_gain_enu = 
             eskf.init_state.enu_pos_var.cwiseQuotient(eskf.init_state.enu_pos_var + gnss_var);
         Eigen::Matrix3d K_gain_ecef = 
-            eskf.settings.ecef_to_enu * K_gain_enu.cast<double>() * eskf.settings.ecef_to_enu.transpose();
+            eskf.settings.ecef_to_enu.transpose() * K_gain_enu.cast<double>().asDiagonal() * eskf.settings.ecef_to_enu;
         eskf.init_state.enu_pos_var = gnss_var.cwiseProduct(K_gain_enu);
         eskf.init_state.ecef_pos_mean += K_gain_ecef * (ecef_pos - eskf.init_state.ecef_pos_mean);
     }
@@ -170,20 +193,24 @@ InsStatus Ins::initAccelGyroAccumulate(
         Eigen::Vector3f ang_vel,
         uint64_t timestamp 
 ) {
-    eskf.init_state.ag_count += 1;
-    if (eskf.init_state.ag_count == 1) {
+    if (eskf.init_state.ag_count == 0) {
+        eskf.init_state.ag_count += 1;
         eskf.init_state.accel_mean = accel;
         eskf.init_state.accel_var = eskf.conf_accel.accel_vgr / INIT_AG_DT;
         eskf.init_state.ang_vel_mean = ang_vel;
         eskf.init_state.ang_vel_var = eskf.conf_gyro.ang_vel_vgr / INIT_AG_DT;
     } else {
+        if (timestamp < eskf.init_state.prev_ag_timestamp) {
+            return InsStatus::ag_measurements_out_of_order_during_init;
+        }
         // determine change in time
         const uint64_t dt = timestamp - eskf.init_state.prev_ag_timestamp; 
         
         if (dt == 0) {
-            eskf.init_state.ag_count -= 1;
             return InsStatus::duplicate_ag_timestamps_during_init;
         }
+        eskf.init_state.ag_count += 1;
+
         const float dt_sec = static_cast<float>(dt) * 1e-3f;
         
         Ins::accumulate(
@@ -328,7 +355,7 @@ Eigen::Matrix3d Ins::triad2AxisCalc(
     true_axes.col(1) = true_axes.col(0).cross(true_axis_2).normalized();
     true_axes.col(2) = true_axes.col(0).cross(true_axes.col(1));
 
-    return true_axes * est_axes.inverse().eval();
+    return true_axes * est_axes.transpose().eval();
 };
 
 

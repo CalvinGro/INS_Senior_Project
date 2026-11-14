@@ -130,9 +130,10 @@ namespace ins {
         invalid_pressure_measurement,
         invalid_gnss_position_measurement,
         invalid_mag_field_measurement,
-        duplicate_ag_timestamps_during_init,
 
         // init
+        duplicate_ag_timestamps_during_init,
+        ag_measurements_out_of_order_during_init,
     };
 
     enum class DelayStatus {
@@ -184,7 +185,7 @@ namespace ins {
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
         Eigen::Vector3f mag_var = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
-        Eigen::Vector3f mag_field_enu = Eigen::Vector3f::Zero(); // vector in enu of magnetic field from ref frame
+        Eigen::Vector3f mag_field_enu = {0.0f, 40.0f, 0.0f}; // vector in enu of magnetic field from ref frame
     };
 
     struct AccelConfiguration {
@@ -192,7 +193,7 @@ namespace ins {
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
         Eigen::Vector3f accel_vgr = Eigen::Vector3f::Zero();  // in sensor frame pre-correction
-        Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Vector3f bias_vgr = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
         Eigen::Vector3f initial_residual_bias_var = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
     };
 
@@ -201,7 +202,7 @@ namespace ins {
         Eigen::Matrix3f correction = Eigen::Matrix3f::Identity(); // in sensor frame
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
         Eigen::Vector3f ang_vel_vgr = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
-        Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Vector3f bias_vgr = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
     };
 
     struct BaroConfiguration {
@@ -211,22 +212,31 @@ namespace ins {
 
     struct GnssConfiguration {
         Eigen::Vector3f antenna_lever_arm = Eigen::Vector3f::Zero(); // lever arm in body frame
-        Eigen::Matrix3f default_var = Eigen::Vector3f::Zero();
+        Eigen::Vector3f default_var = Eigen::Vector3f::Zero();
     };
 
     struct EskfSettings {
         Eigen::Matrix3f gyro_correction = Eigen::Matrix3f::Identity(); // rotation from sensor to body and correction
         Eigen::Vector3f gyro_offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        Eigen::Matrix3f ang_vel_vgr = Eigen::Matrix3f::Zero(); // in body frame post-correction
+        Eigen::Matrix3f gyro_bias_vgr = Eigen::Matrix3f::Zero(); // in body frame post-correction
 
         Eigen::Matrix3f accel_correction = Eigen::Matrix3f::Identity(); // rotation from sensor to body and correction
         Eigen::Vector3f accel_offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        Eigen::Matrix3f accel_vgr = Eigen::Matrix3f::Zero();  // in sensor frame pre-correction
+        Eigen::Matrix3f accel_bias_vgr = Eigen::Matrix3f::Zero(); // in sensor frame pre-correction
         
         Eigen::Matrix3f mag_correction = Eigen::Matrix3f::Identity(); // rotation from sensor to body and correction
         Eigen::Vector3f mag_offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
-        Eigen::Matrix3f mag_field_enu = Eigen::Matrix3f::Identity(); // The magnetic field in ENU frame
+        Eigen::Vector3f mag_field_enu = Eigen::Vector3f::Identity(); // The magnetic field in ENU frame
+        Eigen::Matrix3f mag_var = Eigen::Matrix3f::Zero(); // in body frame post-correction
 
         float baro_offset = 0.0f; // altitude offset in meters
-        
+        float baro_var = 0.0f; // baro variance in meters^2 (based off linearization at ref frame / init alt)
+        float baro_bias_vgr = 0.0f; // baro bias vgr in meters^2 / second
+
+        Eigen::Vector3f antenna_lever_arm = Eigen::Vector3f::Zero(); // lever arm in body frame
+        Eigen::Vector3f default_gnss_var = Eigen::Vector3f::Zero(); // enu frame
         Eigen::Vector3d origin_ecef; // the starting point / reference frame in meters
         Eigen::Matrix3d ecef_to_enu; // rotation matrix from ecef to enu at reference framed
     };
@@ -253,7 +263,7 @@ namespace ins {
 
         uint16_t gnss_count = 0;
         Eigen::Vector3d ecef_pos_mean = Eigen::Vector3f::Zero(); 
-        Eigen::Matrix3d enu_pos_var = Eigen::Matrix3f::Identity(); // relative to enu coordinates at the system's location
+        Eigen::Vector3f enu_pos_var = Eigen::Vector3f::Zero(); // relative to enu coordinates at the system's location
     };
 
     // this is in sensor frame

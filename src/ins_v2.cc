@@ -43,8 +43,8 @@ namespace ins {
         }
 
         AGInternalSample ag_sample = {
-            (eskf.conf_accel.sensor_to_body * eskf.conf_accel.correction) * (accel - eskf.conf_accel.offset),
-            (eskf.conf_gyro.sensor_to_body * eskf.conf_gyro.correction) * (ang_vel - eskf.conf_gyro.offset)
+            eskf.settings.accel_correction * (accel - eskf.settings.accel_offset),
+            eskf.settings.accel_offset * (ang_vel - eskf.settings.gyro_offset)
         };
         InternalMeasurement mea = { ag_sample, timestamp };
 
@@ -114,9 +114,7 @@ namespace ins {
             }
         }
 
-        MagInternalSample mag_sample = { 
-            (eskf.conf_mag.sensor_to_body * eskf.conf_mag.correction) * (mag_field - eskf.conf_mag.offset) 
-        };
+        MagInternalSample mag_sample = { eskf.settings.mag_correction * (mag_field - eskf.settings.mag_offset) };
         InternalMeasurement mea = { mag_sample, timestamp };
         
         // delayed state check and handling
@@ -143,11 +141,11 @@ namespace ins {
 
         Eigen::Vector3f gnss_var = {hAcc, hAcc, vAcc};
         if (!std::isfinite(hAcc) || hAcc <= 0.0f) {
-            gnss_var[0] = eskf.conf_gnss.default_var[0];
-            gnss_var[1] = eskf.conf_gnss.default_var[1];
+            gnss_var[0] = eskf.settings.default_gnss_var[0];
+            gnss_var[1] = eskf.settings.default_gnss_var[1];
         }
         if (!std::isfinite(vAcc) || vAcc <= 0.0f) {
-            gnss_var[2] = eskf.conf_gnss.default_var[2];
+            gnss_var[2] = eskf.settings.default_gnss_var[2];
         }
 
         const Eigen::Vector3d ecef_pos = geodeticToEcef(lat_rad, long_rad, altitude);

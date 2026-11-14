@@ -15,8 +15,6 @@ Description - This file defines the interface to apply abstracted measurements o
 #include "eskf.h" 
 #include "ins_types.h"
 
-#include <stdbool.h>
-#include <variant>
 #include <stdint.h>
 
 #define LIST_OF_ERRORS_SIZE 500
