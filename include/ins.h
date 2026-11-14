@@ -13,7 +13,6 @@ Description - This file defines...
 #include "eskf.h" 
 #include "ins_types.h"
 
-#include <stdbool.h>
 #include <variant>
 #include <cmath>
 #include <stdint.h>
@@ -54,9 +53,7 @@ public:
         eskf.conf_mag = *mag_config;
     };
 
-    InsStatus init(void) {
-
-    };
+    InsStatus init(uint64_t last_timestamp) {};
 
     InsStatus initAccelGyroAccumulate(
         Eigen::Vector3f accel,
@@ -114,6 +111,7 @@ public:
     ) {};
 
 private:
+    InsStatus safeApplyMeasurement(InternalMeasurement& mea) {};
 
     bool readyToStart(uint64_t timestamp) {};
     
@@ -132,10 +130,29 @@ private:
         float altitude
     ) {};
 
-    Eigen::Matrix3d rotateEnuToEskf(
-        const Eigen::Vector3d enu_variance,
+    Eigen::Matrix3d calcRotationEnuToEskf(
         double latitude, // radians
         double longitude // radians
     ) {};
+
+    // initialization utilities
+    Eigen::Matrix<double,3,6> buildOrientationJacobian(
+        const Eigen::Vector3d& accel,
+        const Eigen::Vector3d& mag,
+        Eigen::Matrix3d& rotation0
+    ) {};
+
+    Eigen::Matrix3d triad2AxisCalc(
+        const Eigen::Vector3d& est_axis_1,
+        const Eigen::Vector3d& est_axis_2,
+        const Eigen::Vector3d& true_axis_1,
+        const Eigen::Vector3d& true_axis_2
+    ) {};
+
+    Eigen::Vector3d RotMaToVec(
+        const Eigen::Matrix3d& rot_matrix
+    ) {};
+
+
 };
 };

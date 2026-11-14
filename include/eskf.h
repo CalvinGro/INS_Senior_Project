@@ -39,7 +39,7 @@ public:
     GnssConfiguration conf_gnss;
     BaroConfiguration conf_baro;
 
-    InitValues init_values;
+    EskfSettings settings;
     InitAccumulationState init_state = {};
     
 private:

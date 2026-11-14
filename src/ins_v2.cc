@@ -34,23 +34,22 @@ namespace ins {
             eskf.init_state.init_phase = InsPhase::initializing;
         }
         if (eskf.init_state.init_phase == InsPhase::initializing) {
-            return Ins::initAccelGyroAccumulate(
-                accel,
-                ang_vel,
-                timestamp
-            );
+            InsStatus init_status = Ins::initAccelGyroAccumulate(accel, ang_vel, timestamp);
+            if (init_status != InsStatus::ok) return init_status;
+            else {
+                AGInternalSample sample = {accel, ang_vel};
+                return delayed_fr.appendOnTimeMeasurement({sample, timestamp});
+            }
         }
 
         AGInternalSample ag_sample = {
             (eskf.conf_accel.sensor_to_body * eskf.conf_accel.correction) * (accel - eskf.conf_accel.offset),
             (eskf.conf_gyro.sensor_to_body * eskf.conf_gyro.correction) * (ang_vel - eskf.conf_gyro.offset)
         };
+        InternalMeasurement mea = { ag_sample, timestamp };
 
-        InternalMeasurement mea = {
-            ag_sample,
-            timestamp
-        };
-        return eskf.applyMeasurement(mea);
+        // delayed state check and handling
+        return safeApplyMeasurement(mea);
     };
 
 
@@ -68,17 +67,23 @@ namespace ins {
             eskf.init_state.init_phase = InsPhase::initializing;
         }
         if (eskf.init_state.init_phase == InsPhase::initializing) {
-            return Ins::initBaroAccumulate(pressure, timestamp);
+            InsStatus init_status = Ins::initBaroAccumulate(pressure, timestamp);
+            if (init_status != InsStatus::ok) return init_status;
+            else {
+                float altitude = translatePressure(pressure);
+                float z_pos = altitude - eskf.settings.baro_offset;
+                BaroInternalSample sample = {z_pos};
+                return delayed_fr.appendOnTimeMeasurement({sample, timestamp});
+            }
         }
 
         float altitude = translatePressure(pressure);
-        float z_pos = altitude - eskf.init_values.baro_offset;
+        float z_pos = altitude - eskf.settings.baro_offset;
         BaroInternalSample baro_sample = { z_pos };
-        InternalMeasurement mea = {
-            baro_sample,
-            timestamp
-        };
-        return eskf.applyMeasurement(mea);
+        InternalMeasurement mea = { baro_sample, timestamp };
+        
+        // delayed state check and handling
+        return safeApplyMeasurement(mea);
     };
 
 
@@ -101,21 +106,21 @@ namespace ins {
             eskf.init_state.init_phase = InsPhase::initializing;
         }
         if (eskf.init_state.init_phase == InsPhase::initializing) {
-            return Ins::initMagAccumulate(
-                mag_field,
-                timestamp
-            );
+            InsStatus init_status = Ins::initMagAccumulate(mag_field, timestamp);
+            if (init_status != InsStatus::ok) return init_status;
+            else {
+                MagInternalSample sample = {mag_field};
+                return delayed_fr.appendOnTimeMeasurement({sample, timestamp});
+            }
         }
 
         MagInternalSample mag_sample = { 
             (eskf.conf_mag.sensor_to_body * eskf.conf_mag.correction) * (mag_field - eskf.conf_mag.offset) 
         };
-
-        InternalMeasurement mea = {
-            mag_sample,
-            timestamp
-        };
-        return eskf.applyMeasurement(mea);
+        InternalMeasurement mea = { mag_sample, timestamp };
+        
+        // delayed state check and handling
+        return safeApplyMeasurement(mea);
     };
     
 
@@ -153,26 +158,27 @@ namespace ins {
             eskf.init_state.init_phase = InsPhase::initializing;
         }
         if (eskf.init_state.init_phase == InsPhase::initializing) {
-            return Ins::initGnssAccumulate(
+            InsStatus init_status = Ins::initGnssAccumulate(
                 ecef_pos,
                 gnss_var,
                 lat_rad,
                 long_rad,
                 timestamp
             );
+            if (init_status != InsStatus::ok) return init_status;
+            else {
+                const Eigen::Vector3f enu_pos = (eskf.settings.ecef_to_enu * (ecef_pos - eskf.settings.origin_ecef)).cast<float>();
+                GnssInternalSample sample = { enu_pos, gnss_var };
+                return delayed_fr.appendOnTimeMeasurement({sample, timestamp});
+            }
         }
 
-        const Eigen::Vector3f enu_pos = (eskf.init_values.ecef_to_enu * (ecef_pos - eskf.init_values.origin_ecef)).cast<float>();
-
-        GnssInternalSample gnss_sample = {
-            enu_pos,
-            gnss_var
-        };
-        InternalMeasurement mea = {
-            gnss_sample,
-            timestamp
-        };
-        return eskf.applyMeasurement(mea);
+        const Eigen::Vector3f enu_pos = (eskf.settings.ecef_to_enu * (ecef_pos - eskf.settings.origin_ecef)).cast<float>();
+        GnssInternalSample gnss_sample = { enu_pos, gnss_var };
+        InternalMeasurement mea = { gnss_sample, timestamp };
+        
+        // delayed state check and handling
+        return safeApplyMeasurement(mea);
     };
 
 
@@ -205,4 +211,17 @@ namespace ins {
             (N * (1.0 - e2) + altitude) * sin_lat
         };
     };
+
+    InsStatus Ins::safeApplyMeasurement(InternalMeasurement& mea) {
+        DelayStatus delay_status = delayed_fr.checkIfDelayed(mea.timestamp);
+        if (delay_status == DelayStatus::delayed) {
+            return delayed_fr.insertDelayedMeasurement(mea);
+            
+        } else if (delay_status == DelayStatus::on_time) {
+            InsStatus apply_status = eskf.applyMeasurement(mea);
+            if (apply_status != InsStatus::ok) return apply_status;
+            return delayed_fr.appendOnTimeMeasurement(mea);
+            
+        } else return InsStatus::measurement_out_of_fr_range;
+    }
 };

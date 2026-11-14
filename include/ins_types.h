@@ -193,6 +193,7 @@ namespace ins {
         Eigen::Matrix3f sensor_to_body = Eigen::Matrix3f::Identity();
         Eigen::Vector3f accel_vgr = Eigen::Vector3f::Zero();  // in sensor frame pre-correction
         Eigen::Matrix3f bias_vgr = Eigen::Matrix3f::Identity(); // in sensor frame pre-correction
+        Eigen::Vector3f initial_residual_bias_var = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
     };
 
     struct GyroConfiguration {
@@ -213,8 +214,19 @@ namespace ins {
         Eigen::Matrix3f default_var = Eigen::Vector3f::Zero();
     };
 
-    struct InitValues {
+    struct EskfSettings {
+        Eigen::Matrix3f gyro_correction = Eigen::Matrix3f::Identity(); // rotation from sensor to body and correction
+        Eigen::Vector3f gyro_offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+
+        Eigen::Matrix3f accel_correction = Eigen::Matrix3f::Identity(); // rotation from sensor to body and correction
+        Eigen::Vector3f accel_offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        
+        Eigen::Matrix3f mag_correction = Eigen::Matrix3f::Identity(); // rotation from sensor to body and correction
+        Eigen::Vector3f mag_offset = Eigen::Vector3f::Zero(); // in sensor frame pre-correction
+        Eigen::Matrix3f mag_field_enu = Eigen::Matrix3f::Identity(); // The magnetic field in ENU frame
+
         float baro_offset = 0.0f; // altitude offset in meters
+        
         Eigen::Vector3d origin_ecef; // the starting point / reference frame in meters
         Eigen::Matrix3d ecef_to_enu; // rotation matrix from ecef to enu at reference framed
     };
@@ -223,6 +235,7 @@ namespace ins {
         InsPhase init_phase = InsPhase::uninitialized;
         uint64_t first_timestamp = 0;
         uint64_t prev_ag_timestamp = 0; // used for vgr calculations
+        AGInternalSample last_ag;
 
         uint16_t ag_count = 0;
         Eigen::Vector3f accel_mean = Eigen::Vector3f::Zero(); // sensor frame (no correction or offset applied yet)

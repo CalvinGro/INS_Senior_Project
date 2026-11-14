@@ -174,8 +174,10 @@ class trajectory_analysis:
 if __name__ == '__main__':
 
     analysis = trajectory_analysis(
-        "generated_data_sets/v1_data_sets/trajectory_data_2.csv",
-        "generated_data_sets/v1_data_sets/trajectory_data_2_measurements_noisy_traj.csv"
+        "data_sets/generated_data_sets/v1_data_sets/trajectory_data_2.csv",
+        "data_sets/generated_data_sets/v1_data_sets/trajectory_data_2_measurements_noisy_traj.csv"
         )
-    #analysis.plot_line_graph("vel_x")
-    analysis.plot_trajectory_with_mea_type()
+    analysis.plot_trajectory()
+    #analysis.plot_trajectory_with_velocity()
+    #analysis.plot_line_graph("pos_x")
+    #analysis.plot_trajectory_with_mea_type()
